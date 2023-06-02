@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+
 	pb "rotating-shop-items-grpc-plugin-server-go/pkg/pb"
 )
 
