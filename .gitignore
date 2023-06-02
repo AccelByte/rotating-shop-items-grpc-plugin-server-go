@@ -48,3 +48,8 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Env
+.env
+
+# Binary file
+rotating-shop-items-grpc-plugin-server-go
