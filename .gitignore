@@ -53,3 +53,4 @@ Thumbs.db
 
 # Binary file
 rotating-shop-items-grpc-plugin-server-go
+/pkg/pb/
