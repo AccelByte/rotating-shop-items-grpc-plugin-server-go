@@ -14,7 +14,6 @@ import (
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/category"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/item"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/section"
-	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/service_plugin_config"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/store"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/view"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclientmodels"
@@ -24,6 +23,9 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
+
+	"accelbyte.net/rotating-shop-items-cli/pkg/client/platformservice"
+	"accelbyte.net/rotating-shop-items-cli/pkg/client/platformservice/openapi2/models"
 )
 
 var (
@@ -64,43 +66,73 @@ var (
 	sLangs      = []string{"en"}
 	sRegions    = []string{"US"}
 
-	abViewName   = "Item Rotation Default View"
+	abViewName   = "Go Item Rotation Default View Demo/CLI"
 	displayOrder = int32(1)
 
 	currencyCode      = "USD"
 	currencyNamespace = "accelbyte"
 )
 
+var platformClientSvc *platformservice.Client
+
 const letterBytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-type simpleItemInfo struct {
-	id    string
-	sku   string
-	title string
+type SimpleItemInfo struct {
+	ID    string
+	SKU   string
+	Title string
 }
 
-type simpleSectionInfo struct {
-	id    string
-	items []*simpleItemInfo
+type SimpleSectionInfo struct {
+	ID    string
+	Items []*SimpleItemInfo
 }
 
 func SetPlatformServiceGrpcTarget(c *cli.Context) error {
-	ok, errOK := servicePluginConfigService.UpdateServicePluginConfigShort(&service_plugin_config.UpdateServicePluginConfigParams{
-		Body:      &platformclientmodels.ServicePluginConfigUpdate{GrpcServerAddress: FlagGrpcUrl},
-		Namespace: c.String(FlagNamespace),
-	})
-	if errOK != nil {
-		logrus.Errorf("could not set the grpc url. %s", errOK)
+	if c.String(FlagGrpcUrl) != "" {
+		fmt.Printf("(Custom Host: %s) ", c.String(FlagGrpcUrl))
 
-		return errOK
+		return platformClientSvc.UpdateSectionPluginConfig(c.String(FlagNamespace), &models.SectionPluginConfigUpdate{
+			ExtendType: Ptr(models.SectionPluginConfigUpdateExtendTypeCUSTOM),
+			CustomConfig: &models.BaseCustomConfig{
+				ConnectionType:    Ptr(models.BaseCustomConfigConnectionTypeINSECURE),
+				GrpcServerAddress: Ptr(c.String(FlagGrpcUrl)),
+			},
+		})
 	}
 
-	logrus.Printf("set grpc url %s in namespace %s", ok.GrpcServerAddress, ok.Namespace)
+	if c.String(FlagExtendAppName) != "" {
+		fmt.Printf("(Extend App: %s) ", c.String(FlagExtendAppName))
+
+		return platformClientSvc.UpdateSectionPluginConfig(c.String(FlagNamespace), &models.SectionPluginConfigUpdate{
+			ExtendType: Ptr(models.SectionPluginConfigUpdateExtendTypeAPP),
+			AppConfig: &models.AppConfig{
+				AppName: Ptr(c.String(FlagExtendAppName)),
+			},
+		})
+	}
 
 	return nil
 }
 
 func CreateStore(c *cli.Context) (string, error) {
+	// Clean up existing stores
+	storeInfo, err := storeService.ListStoresShort(&store.ListStoresParams{
+		Namespace: c.String(FlagNamespace),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	for _, s := range storeInfo {
+		if Val(s.Published) == false {
+			_, _ = storeService.DeleteStoreShort(&store.DeleteStoreParams{
+				Namespace: c.String(FlagNamespace),
+				StoreID:   Val(s.StoreID),
+			})
+		}
+	}
+
 	ok, errOK := storeService.CreateStoreShort(&store.CreateStoreParams{
 		Body: &platformclientmodels.StoreCreate{
 			DefaultLanguage:    "en",
@@ -187,7 +219,7 @@ func publishStoreChange(storeId string) string {
 	return storeID
 }
 
-func CreateItems(c *cli.Context, storeId, itemDiff string, itemCount int, doPublish bool) ([]*simpleItemInfo, error) {
+func CreateItems(c *cli.Context, storeId, itemDiff string, itemCount int, doPublish bool) ([]*SimpleItemInfo, error) {
 	iType := platformclientmodels.ItemCreateItemTypeSEASON
 	eType := platformclientmodels.ItemCreateEntitlementTypeDURABLE
 	sType := platformclientmodels.ItemCreateSeasonTypeTIER
@@ -199,16 +231,16 @@ func CreateItems(c *cli.Context, storeId, itemDiff string, itemCount int, doPubl
 	iLocalization := make(map[string]platformclientmodels.Localization)
 	iRegionData := make(map[string][]platformclientmodels.RegionDataItemDTO)
 
-	var nItems []*simpleItemInfo
+	var nItems []*SimpleItemInfo
 
 	for i := 0; i < itemCount; i++ {
 		price := int32((i + 1) * 2)
-		var nItemInfo simpleItemInfo
-		nItemInfo.title = fmt.Sprint("Item " + itemDiff + " Titled " + strconv.FormatInt(int64(i+1), 10))
-		nItemInfo.sku = fmt.Sprint("SKU_" + itemDiff + "_" + strconv.FormatInt(int64(i+1), 10))
+		var nItemInfo SimpleItemInfo
+		nItemInfo.Title = fmt.Sprint("Item " + itemDiff + " Titled " + strconv.FormatInt(int64(i+1), 10))
+		nItemInfo.SKU = fmt.Sprint("SKU_" + itemDiff + "_" + strconv.FormatInt(int64(i+1), 10))
 
 		iLocalization["en"] = platformclientmodels.Localization{
-			Title: &nItemInfo.title,
+			Title: &nItemInfo.Title,
 		}
 
 		regionData := platformclientmodels.RegionDataItemDTO{
@@ -223,7 +255,7 @@ func CreateItems(c *cli.Context, storeId, itemDiff string, itemCount int, doPubl
 			Body: &platformclientmodels.ItemCreate{
 				Features:        []string{"test"},
 				Tags:            []string{"tags"},
-				Name:            &nItemInfo.title,
+				Name:            &nItemInfo.Title,
 				ItemType:        &iType,
 				CategoryPath:    &categoryPath,
 				EntitlementType: &eType,
@@ -231,7 +263,7 @@ func CreateItems(c *cli.Context, storeId, itemDiff string, itemCount int, doPubl
 				Status:          &status,
 				Listable:        true,
 				Purchasable:     true,
-				Sku:             nItemInfo.sku,
+				Sku:             nItemInfo.SKU,
 				Localizations:   iLocalization,
 				RegionData:      iRegionData,
 			},
@@ -244,8 +276,8 @@ func CreateItems(c *cli.Context, storeId, itemDiff string, itemCount int, doPubl
 			return nil, errOK
 		}
 
-		// add the items
-		nItemInfo.id = *ok.ItemID
+		// add the Items
+		nItemInfo.ID = *ok.ItemID
 		nItems = append(nItems, &nItemInfo)
 	}
 
@@ -259,11 +291,11 @@ func CreateItems(c *cli.Context, storeId, itemDiff string, itemCount int, doPubl
 	return nItems, nil
 }
 
-func CreateSectionsWithItems(c *cli.Context, storeId, viewId string, itemCount int, doPublish bool) (*simpleSectionInfo, error) {
+func CreateSectionsWithItems(c *cli.Context, storeId, viewId string, itemCount int, doPublish bool) (*SimpleSectionInfo, error) {
 	itemDiff := RandStringBytes(6)
 	items, errOK := CreateItems(c, storeId, itemDiff, itemCount, doPublish)
 	if errOK != nil {
-		logrus.Errorf("could not create items section. %s", errOK.Error())
+		logrus.Errorf("could not create Items section. %s", errOK.Error())
 
 		return nil, errOK
 	}
@@ -271,8 +303,8 @@ func CreateSectionsWithItems(c *cli.Context, storeId, viewId string, itemCount i
 	var sectionItems []*platformclientmodels.SectionItem
 	for _, itemField := range items {
 		sectionItems = append(sectionItems, &platformclientmodels.SectionItem{
-			ID:  &itemField.id,
-			Sku: itemField.sku,
+			ID:  &itemField.ID,
+			Sku: itemField.SKU,
 		})
 	}
 	sectionTitle := itemDiff + " Section"
@@ -281,11 +313,13 @@ func CreateSectionsWithItems(c *cli.Context, storeId, viewId string, itemCount i
 		Title: &sectionTitle,
 	}
 
+	startDate := time.Now()
 	ok, err := sectionService.CreateSectionShort(&section.CreateSectionParams{
 		Body: &platformclientmodels.SectionCreate{
 			Active:       true,
 			DisplayOrder: 1,
-			EndDate:      strfmt.DateTime(time.Date(2025, 8, 9, 0, 0, 0, 0, time.UTC)),
+			StartDate:    strfmt.DateTime(startDate),
+			EndDate:      strfmt.DateTime(startDate.Add(time.Hour * 24)),
 			FixedPeriodRotationConfig: &platformclientmodels.FixedPeriodRotationConfig{
 				BackfillType: platformclientmodels.FixedPeriodRotationConfigBackfillTypeNONE,
 				Rule:         platformclientmodels.FixedPeriodRotationConfigRuleSEQUENCE,
@@ -294,7 +328,6 @@ func CreateSectionsWithItems(c *cli.Context, storeId, viewId string, itemCount i
 			Localizations: localz,
 			Name:          &sectionTitle,
 			RotationType:  platformclientmodels.SectionCreateRotationTypeFIXEDPERIOD,
-			StartDate:     strfmt.DateTime(time.Now()),
 			ViewID:        viewId,
 		},
 		Namespace: c.String(FlagNamespace),
@@ -306,9 +339,9 @@ func CreateSectionsWithItems(c *cli.Context, storeId, viewId string, itemCount i
 		return nil, errOK
 	}
 
-	result := &simpleSectionInfo{
-		id:    *ok.SectionID,
-		items: items,
+	result := &SimpleSectionInfo{
+		ID:    *ok.SectionID,
+		Items: items,
 	}
 
 	if doPublish {
@@ -323,23 +356,20 @@ func CreateSectionsWithItems(c *cli.Context, storeId, viewId string, itemCount i
 
 func enableFixedRotationWithCustomBackfillForSection(c *cli.Context, storeId, sectionId string, doPublish bool) error {
 	if storeId == "" {
-		return fmt.Errorf("no store id stored")
+		return fmt.Errorf("no store ID stored")
 	}
 
-	sectionTitle := "Update Section"
-	localz := make(map[string]platformclientmodels.Localization)
-	localz["en"] = platformclientmodels.Localization{
-		Title: &sectionTitle,
-	}
+	startDate := time.Now()
 	_, err := sectionService.UpdateSectionShort(&section.UpdateSectionParams{
 		Body: &platformclientmodels.SectionUpdate{
+			Active: true,
 			FixedPeriodRotationConfig: &platformclientmodels.FixedPeriodRotationConfig{
 				BackfillType: platformclientmodels.FixedPeriodRotationConfigBackfillTypeCUSTOM,
 				Rule:         platformclientmodels.FixedPeriodRotationConfigRuleSEQUENCE,
 			},
-			RotationType:  platformclientmodels.SectionUpdateRotationTypeFIXEDPERIOD,
-			Localizations: localz,
-			Name:          &sectionTitle,
+			RotationType: platformclientmodels.SectionUpdateRotationTypeFIXEDPERIOD,
+			StartDate:    strfmt.DateTime(startDate),
+			EndDate:      strfmt.DateTime(startDate.Add(time.Hour * 24)),
 		},
 		Namespace: c.String(FlagNamespace),
 		SectionID: sectionId,
@@ -363,12 +393,16 @@ func enableFixedRotationWithCustomBackfillForSection(c *cli.Context, storeId, se
 
 func enableCustomRotationForSection(c *cli.Context, storeId, sectionId string, doPublish bool) error {
 	if storeId == "" {
-		return fmt.Errorf("no store id stored")
+		return fmt.Errorf("no store ID stored")
 	}
 
+	startDate := time.Now()
 	_, err := sectionService.UpdateSectionShort(&section.UpdateSectionParams{
 		Body: &platformclientmodels.SectionUpdate{
+			Active:       true,
 			RotationType: platformclientmodels.SectionUpdateRotationTypeCUSTOM,
+			StartDate:    strfmt.DateTime(startDate),
+			EndDate:      strfmt.DateTime(startDate.Add(time.Hour * 24)),
 		},
 		Namespace: c.String(FlagNamespace),
 		SectionID: sectionId,
@@ -390,7 +424,7 @@ func enableCustomRotationForSection(c *cli.Context, storeId, sectionId string, d
 	return nil
 }
 
-func GetSectionRotationItems(c *cli.Context, userId, viewId string) ([]*simpleSectionInfo, error) {
+func GetSectionRotationItems(c *cli.Context, userId, viewId string) ([]*SimpleSectionInfo, error) {
 	activeSections, errOK := sectionService.PublicListActiveSectionsShort(&section.PublicListActiveSectionsParams{
 		Namespace: c.String(FlagNamespace),
 		UserID:    userId,
@@ -402,30 +436,30 @@ func GetSectionRotationItems(c *cli.Context, userId, viewId string) ([]*simpleSe
 		return nil, errOK
 	}
 
-	var iSection []*simpleSectionInfo
+	var iSection []*SimpleSectionInfo
 	var rItems []*platformclientmodels.ItemInfo
 	for _, activeSection := range activeSections {
 		for _, currentRotationItem := range activeSection.CurrentRotationItems {
 			rItems = append(rItems, currentRotationItem)
-			var sectionInfo *simpleSectionInfo
-			sectionInfo.id = *activeSection.SectionID
+			var sectionInfo SimpleSectionInfo
+			sectionInfo.ID = Val(activeSection.SectionID)
 
 			if rItems != nil && len(rItems) != 0 {
-				var items []*simpleItemInfo
+				var items []*SimpleItemInfo
 				for _, it := range rItems {
-					var itemInfo *simpleItemInfo
-					itemInfo.id = *it.ItemID
-					itemInfo.sku = it.Sku
-					itemInfo.title = *it.Title
+					var itemInfo SimpleItemInfo
+					itemInfo.ID = *it.ItemID
+					itemInfo.SKU = it.Sku
+					itemInfo.Title = *it.Title
 
-					items = append(items, itemInfo)
+					items = append(items, &itemInfo)
 				}
-				sectionInfo.items = items
+				sectionInfo.Items = items
 			} else {
-				sectionInfo.items = []*simpleItemInfo{}
+				sectionInfo.Items = []*SimpleItemInfo{}
 			}
 
-			iSection = append(iSection, sectionInfo)
+			iSection = append(iSection, &sectionInfo)
 		}
 	}
 

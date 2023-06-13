@@ -51,6 +51,10 @@ Thumbs.db
 # Env
 .env
 
+.cache
+demo/cli/cli
+.env.dev
+
 # Binary file
 rotating-shop-items-grpc-plugin-server-go
 /pkg/pb/

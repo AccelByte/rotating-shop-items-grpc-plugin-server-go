@@ -6,6 +6,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"strings"
 	"time"
@@ -27,7 +28,7 @@ func NewSectionServiceServer() (*SectionServiceServer, error) {
 }
 
 func (s SectionServiceServer) GetRotationItems(ctx context.Context, request *pb.GetRotationItemsRequest) (*pb.GetRotationItemsResponse, error) {
-	logrus.Info("GetRotationItems Request")
+	logJson("GetRotationItems Request: ", request)
 
 	inputCount := len(request.GetSectionObject().GetItems())
 	currentPoint := time.Now().Hour()
@@ -41,14 +42,17 @@ func (s SectionServiceServer) GetRotationItems(ctx context.Context, request *pb.
 		},
 	}
 
-	return &pb.GetRotationItemsResponse{
+	resp := pb.GetRotationItemsResponse{
 		Items:     responseItems,
 		ExpiredAt: 0,
-	}, nil
+	}
+	logJson("GetRotationItems Response: ", &resp)
+
+	return &resp, nil
 }
 
 func (s SectionServiceServer) Backfill(ctx context.Context, request *pb.BackfillRequest) (*pb.BackfillResponse, error) {
-	logrus.Info("Backfill Request")
+	logJson("Backfill Request: ", request)
 
 	var newItems []*pb.BackfilledItemObject
 
@@ -65,5 +69,13 @@ func (s SectionServiceServer) Backfill(ctx context.Context, request *pb.Backfill
 		}
 	}
 
-	return &pb.BackfillResponse{BackfilledItems: newItems}, nil
+	resp := &pb.BackfillResponse{BackfilledItems: newItems}
+	logJson("Backfill Response: ", resp)
+
+	return resp, nil
+}
+
+func logJson(msg string, data interface{}) {
+	jsonData, _ := json.MarshalIndent(data, "", "  ")
+	logrus.Infof("%s%s", msg, string(jsonData))
 }
