@@ -57,7 +57,7 @@ func getRotatingShopItemHandler(c *cli.Context, cfg *config.Config) error {
 	}
 
 	defer func() {
-		DeleteStore(c, storeId)
+		//DeleteStore(c, storeId)
 	}()
 
 	log.Infof("Creating category... ")
@@ -73,20 +73,27 @@ func getRotatingShopItemHandler(c *cli.Context, cfg *config.Config) error {
 	}
 
 	log.Infof("Creating section with Items...")
-	sInfo, err := CreateSectionsWithItems(c, storeId, viewId, 10, true)
+	sectionInfo, items, err := CreateSectionsWithItems(c, storeId, viewId, 5, true)
 	if err != nil {
 		return err
 	}
 
 	if c.String(FlagRunMode) == "backfill" {
+		entitlementID, err := GrantEntitlement(c, storeId, Val(userInfo.UserID), items[0].ID, 1)
+		if err != nil {
+			return fmt.Errorf("unable to grant entitlement: %s", err)
+		}
+
+		log.Infof("Entitlement granted: %s\n", entitlementID)
+
 		log.Infof("Enabling custom backfill for section... ")
-		err = enableFixedRotationWithCustomBackfillForSection(c, storeId, sInfo.ID, true)
+		err = enableFixedRotationWithCustomBackfillForSection(c, storeId, sectionInfo.ID, true)
 		if err != nil {
 			return err
 		}
 	} else {
 		log.Infof("Enabling custom rotation for section... ")
-		err = enableCustomRotationForSection(c, storeId, sInfo.ID, true)
+		err = enableCustomRotationForSection(c, storeId, sectionInfo.ID, true)
 		if err != nil {
 			return err
 		}
@@ -175,20 +182,6 @@ func GetCLIApp(cfg *config.Config) *cli.App {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			// TODO test
-			//return getRotatingShopItemHandler(c, cfg)
-
-			fmt.Println("Variables")
-			fmt.Printf("%s: %s\n", FlagNamespace, c.String(FlagNamespace))
-			fmt.Printf("%s: %s\n", FlagBaseUrl, c.String(FlagBaseUrl))
-			fmt.Printf("%s: %s\n", FlagClientId, c.String(FlagClientId))
-			fmt.Printf("%s: %s\n", FlagClientSecret, c.String(FlagClientSecret))
-			fmt.Printf("%s: %s\n", FlagUsername, c.String(FlagUsername))
-			fmt.Printf("%s: %s\n", FlagPassword, c.String(FlagPassword))
-			fmt.Printf("%s: %s\n", FlagCategoryPath, c.String(FlagCategoryPath))
-			fmt.Printf("%s: %s\n", FlagGrpcUrl, c.String(FlagGrpcUrl))
-			fmt.Printf("%s: %s\n", FlagExtendAppName, c.String(FlagExtendAppName))
-			fmt.Printf("%s: %s\n", FlagRunMode, c.String(FlagRunMode))
 			return getRotatingShopItemHandler(c, cfg)
 		},
 	}
