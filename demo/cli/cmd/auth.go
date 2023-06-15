@@ -5,14 +5,14 @@
 package cmd
 
 import (
+	"log"
 	"os"
 
+	"github.com/AccelByte/accelbyte-go-sdk/iam-sdk/pkg/iamclient/users"
 	"github.com/AccelByte/accelbyte-go-sdk/iam-sdk/pkg/iamclientmodels"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/factory"
-	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/repository"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/iam"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils/auth"
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
 
@@ -21,10 +21,10 @@ var (
 	tokenRepo  = *auth.DefaultTokenRepositoryImpl()
 )
 
-func TokenGrantV3(c *cli.Context) (*iamclientmodels.OauthmodelTokenResponseV3, error) {
-	err := os.Setenv("AB_CLIENT_ID", c.String(FlagClientId))
-	err = os.Setenv("AB_CLIENT_SECRET", c.String(FlagClientSecret))
-	err = os.Setenv("AB_BASE_URL", c.String(FlagBaseUrl))
+func TokenGrantV3(c *cli.Context) (*iamclientmodels.ModelUserResponseV3, error) {
+	_ = os.Setenv("AB_CLIENT_ID", c.String(FlagClientId))
+	_ = os.Setenv("AB_CLIENT_SECRET", c.String(FlagClientSecret))
+	_ = os.Setenv("AB_BASE_URL", c.String(FlagBaseUrl))
 
 	oauth := &iam.OAuth20Service{
 		Client:           factory.NewIamClient(&configRepo),
@@ -32,24 +32,20 @@ func TokenGrantV3(c *cli.Context) (*iamclientmodels.OauthmodelTokenResponseV3, e
 		TokenRepository:  &tokenRepo,
 	}
 
-	err = oauth.LoginUser(c.String(FlagUsername), c.String(FlagPassword))
+	err := oauth.LoginUser(c.String(FlagUsername), c.String(FlagPassword))
 	if err != nil {
-		logrus.Print("failed login user.")
-	} else {
-		logrus.Print("successful login.")
+		return nil, err
 	}
 
-	token, err := oauth.GetToken()
+	usersService := &iam.UsersService{
+		Client:           factory.NewIamClient(&configRepo),
+		ConfigRepository: &configRepo,
+		TokenRepository:  &tokenRepo,
+	}
+	userInfo, err := usersService.PublicGetMyUserV3Short(&users.PublicGetMyUserV3Params{})
 	if err != nil {
-		logrus.Print("failed to get token.")
+		log.Fatalf("Get user info failed: %s\n", err)
 	}
 
-	tokenModel, err := repository.ConvertInterfaceToModel(&iamclientmodels.OauthmodelTokenResponseV3{
-		AccessToken: &token,
-	})
-	if err != nil {
-		logrus.Print("failed to convert token. %s", err.Error())
-	}
-
-	return tokenModel, nil
+	return userInfo, nil
 }

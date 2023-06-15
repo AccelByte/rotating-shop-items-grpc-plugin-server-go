@@ -6,13 +6,16 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"os"
+	"time"
 
 	"accelbyte.net/rotating-shop-items-cli/cmd"
 	"accelbyte.net/rotating-shop-items-cli/config"
 )
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	cfg := config.Get()
 	app := cmd.GetCLIApp(cfg)
 

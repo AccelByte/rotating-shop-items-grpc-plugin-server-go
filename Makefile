@@ -20,7 +20,7 @@ lint: proto
 	rm -f lint.err
 	find -type f -iname go.mod -exec dirname {} \; | while read DIRECTORY; do \
 		echo "# $$DIRECTORY"; \
-		docker run -t --rm -u $$(id -u):$$(id -g) -v $$(pwd):/data/ -w /data/ -e GOCACHE=/data/.cache/go-build -e GOLANGCI_LINT_CACHE=/data/.cache/go-lint golangci/golangci-lint:v1.42.1\
+		docker run -t --rm -u $$(id -u):$$(id -g) -v $$(pwd):/data/ -w /data/ -e GOCACHE=/data/.cache/go-build -e GOLANGCI_LINT_CACHE=/data/.cache/go-lint golangci/golangci-lint:v1.50.1\
 				sh -c "cd $$DIRECTORY && golangci-lint -v --timeout 5m --max-same-issues 0 --max-issues-per-linter 0 --color never run || touch /data/lint.err"; \
 	done
 	[ ! -f lint.err ] || (rm lint.err && exit 1)
@@ -39,7 +39,8 @@ imagex:
 	docker buildx rm --keep-state $(BUILDER)
 
 imagex_push:
-	@test -n "$(IMAGE_VERSION)" || (echo "IMAGE_VERSION is not set"; exit 1)
+	@test -n "$(IMAGE_TAG)" || (echo "IMAGE_TAG is not set (e.g. 'v0.1.0', 'latest')"; exit 1)
+	@test -n "$(REPO_URL)" || (echo "REPO_URL is not set"; exit 1)
 	docker buildx inspect $(BUILDER) || docker buildx create --name $(BUILDER) --use
-	docker buildx build -t ${IMAGE_PREFIX}${IMAGE_NAME}:${IMAGE_VERSION} --platform linux/arm64/v8,linux/amd64 --push .
+	docker buildx build -t ${REPO_URL}:${IMAGE_TAG} --platform linux/arm64/v8,linux/amd64 --push .
 	docker buildx rm --keep-state $(BUILDER)
