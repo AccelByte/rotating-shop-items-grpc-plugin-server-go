@@ -5,7 +5,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -22,7 +21,6 @@ import (
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/platform"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/tests/integration"
 	"github.com/go-openapi/strfmt"
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
 	"accelbyte.net/rotating-shop-items-cli/pkg/client/platformservice"
@@ -71,7 +69,7 @@ var (
 
 var platformClientSvc *platformservice.Client
 
-const ALPHA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const AlphaChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const durationTwoDays = time.Hour * 24 * 2
 
 type SimpleItemInfo struct {
@@ -130,7 +128,7 @@ func CreateStore(c *cli.Context) (string, error) {
 		}
 	}
 
-	ok, errOK := storeService.CreateStoreShort(&store.CreateStoreParams{
+	ok, err := storeService.CreateStoreShort(&store.CreateStoreParams{
 		Body: &platformclientmodels.StoreCreate{
 			DefaultLanguage:    "en",
 			DefaultRegion:      "US",
@@ -141,20 +139,18 @@ func CreateStore(c *cli.Context) (string, error) {
 		},
 		Namespace: c.String(FlagNamespace),
 	})
-	if errOK != nil {
-		logrus.Errorf("could not create store. %s", errOK)
-
-		return "", errOK
+	if err != nil {
+		return "", err
 	}
 
-	return *ok.StoreID, nil
+	return Val(ok.StoreID), nil
 }
 
 func CreateCategory(c *cli.Context, storeId string) error {
 	localization := make(map[string]string)
 	localization["en"] = c.String(FlagCategoryPath)
 
-	ok, errOK := categoryService.CreateCategoryShort(&category.CreateCategoryParams{
+	_, err := categoryService.CreateCategoryShort(&category.CreateCategoryParams{
 		Body: &platformclientmodels.CategoryCreate{
 			CategoryPath:             Ptr(c.String(FlagCategoryPath)),
 			LocalizationDisplayNames: localization,
@@ -162,13 +158,9 @@ func CreateCategory(c *cli.Context, storeId string) error {
 		Namespace: c.String(FlagNamespace),
 		StoreID:   storeId,
 	})
-	if errOK != nil {
-		logrus.Errorf("could not create category. %s", errOK)
-
-		return errOK
+	if err != nil {
+		return err
 	}
-
-	logrus.Printf("category created with path. %s", *ok.CategoryPath)
 
 	return nil
 }
@@ -176,11 +168,9 @@ func CreateCategory(c *cli.Context, storeId string) error {
 func CreateStoreView(c *cli.Context, storeId string) (string, error) {
 	localization := make(map[string]platformclientmodels.Localization)
 	localization["en"] = platformclientmodels.Localization{
-		Description:     "",
-		LongDescription: "",
-		Title:           &abViewName,
+		Title: &abViewName,
 	}
-	ok, errOK := viewService.CreateViewShort(&view.CreateViewParams{
+	ok, err := viewService.CreateViewShort(&view.CreateViewParams{
 		Body: &platformclientmodels.ViewCreate{
 			DisplayOrder:  &displayOrder,
 			Localizations: localization,
@@ -189,13 +179,11 @@ func CreateStoreView(c *cli.Context, storeId string) (string, error) {
 		Namespace: c.String(FlagNamespace),
 		StoreID:   storeId,
 	})
-	if errOK != nil {
-		logrus.Errorf("could not create view. %s", errOK.Error())
-
-		return "", errOK
+	if err != nil {
+		return "", err
 	}
 
-	return *ok.ViewID, nil
+	return Val(ok.ViewID), nil
 }
 
 func publishStoreChange(storeId string) string {
@@ -206,8 +194,6 @@ func publishStoreChange(storeId string) string {
 
 	created, errCreate := catalogChangesService.PublishAllShort(inputCreate)
 	if errCreate != nil {
-		logrus.Error(errCreate.Error())
-
 		return ""
 	}
 	storeID := *created.StoreID
@@ -240,7 +226,7 @@ func CreateItems(c *cli.Context, storeId, itemDiff string, itemCount int, doPubl
 			},
 		}
 
-		ok, errOK := itemService.CreateItemShort(&item.CreateItemParams{
+		ok, err := itemService.CreateItemShort(&item.CreateItemParams{
 			Body: &platformclientmodels.ItemCreate{
 				Features:        []string{"go-demo-cli"},
 				Tags:            []string{"tags"},
@@ -259,43 +245,37 @@ func CreateItems(c *cli.Context, storeId, itemDiff string, itemCount int, doPubl
 			Namespace: c.String(FlagNamespace),
 			StoreID:   storeId,
 		})
-		if errOK != nil {
-			logrus.Errorf("could not create item. %s", errOK.Error())
-
-			return nil, errOK
+		if err != nil {
+			return nil, err
 		}
 
 		// add the Items
-		nItemInfo.ID = *ok.ItemID
+		nItemInfo.ID = Val(ok.ItemID)
 		nItems = append(nItems, &nItemInfo)
 	}
 
 	if doPublish {
 		publishStoreChange(storeId)
-		logrus.Infof("publish storeId %s.", storeId)
-
-		return nItems, nil
 	}
 
 	return nItems, nil
 }
 
 func CreateSectionsWithItems(c *cli.Context, storeId, viewId string, itemCount int, doPublish bool) (*SimpleSectionInfo, []*SimpleItemInfo, error) {
-	itemDiff := RandomString(ALPHA_CHARS, 6)
-	items, errOK := CreateItems(c, storeId, itemDiff, itemCount, doPublish)
-	if errOK != nil {
-		logrus.Errorf("could not create Items section. %s", errOK.Error())
-
-		return nil, nil, errOK
+	itemDiff := RandomString(AlphaChars, 6)
+	items, err := CreateItems(c, storeId, itemDiff, itemCount, doPublish)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	var sectionItems []*platformclientmodels.SectionItem
-	for _, itemField := range items {
-		sectionItems = append(sectionItems, &platformclientmodels.SectionItem{
+	var sectionItems = make([]*platformclientmodels.SectionItem, len(items))
+	for idx, itemField := range items {
+		sectionItems[idx] = &platformclientmodels.SectionItem{
 			ID:  &itemField.ID,
 			Sku: itemField.SKU,
-		})
+		}
 	}
+
 	sectionTitle := itemDiff + " Section"
 	localization := make(map[string]platformclientmodels.Localization)
 	localization["en"] = platformclientmodels.Localization{
@@ -323,9 +303,7 @@ func CreateSectionsWithItems(c *cli.Context, storeId, viewId string, itemCount i
 		StoreID:   storeId,
 	})
 	if err != nil {
-		logrus.Errorf("could not create section. %s", errOK.Error())
-
-		return nil, nil, errOK
+		return nil, nil, err
 	}
 
 	result := &SimpleSectionInfo{
@@ -335,9 +313,6 @@ func CreateSectionsWithItems(c *cli.Context, storeId, viewId string, itemCount i
 
 	if doPublish {
 		publishStoreChange(storeId)
-		logrus.Infof("publish storeId %s.", storeId)
-
-		return result, items, nil
 	}
 
 	return result, items, nil
@@ -367,16 +342,11 @@ func enableFixedRotationWithCustomBackfillForSection(c *cli.Context, storeId, se
 		StoreID:   storeId,
 	})
 	if err != nil {
-		logrus.Errorf("could not update section for custom backfill. %s", err.Error())
-
 		return err
 	}
 
 	if doPublish {
 		publishStoreChange(storeId)
-		logrus.Infof("publish storeId %s.", storeId)
-
-		return nil
 	}
 
 	return nil
@@ -400,38 +370,28 @@ func enableCustomRotationForSection(c *cli.Context, storeId, sectionId string, d
 		StoreID:   storeId,
 	})
 	if err != nil {
-		logrus.Errorf("could not update section. %s", err.Error())
-
 		return err
 	}
 
 	if doPublish {
 		publishStoreChange(storeId)
-		logrus.Infof("publish storeId %s.", storeId)
-
-		return nil
 	}
 
 	return nil
 }
 
 func GetSectionRotationItems(c *cli.Context, userId, viewId string) ([]*SimpleSectionInfo, error) {
-	activeSections, errOK := sectionService.PublicListActiveSectionsShort(&section.PublicListActiveSectionsParams{
+	activeSections, err := sectionService.PublicListActiveSectionsShort(&section.PublicListActiveSectionsParams{
 		Namespace: c.String(FlagNamespace),
 		UserID:    userId,
 		ViewID:    &viewId,
 	})
-	if errOK != nil {
-		logrus.Errorf("could not get active sessions. %s", errOK)
-
-		return nil, errOK
+	if err != nil {
+		return nil, err
 	}
 
-	d, _ := json.MarshalIndent(activeSections, "", "  ")
-	fmt.Printf("%s\n", string(d))
-
-	var sectionList []*SimpleSectionInfo
-	for _, activeSection := range activeSections {
+	var sectionList = make([]*SimpleSectionInfo, len(activeSections))
+	for idx, activeSection := range activeSections {
 		var sectionInfo = SimpleSectionInfo{
 			ID:    Val(activeSection.SectionID),
 			Items: []*SimpleItemInfo{},
@@ -445,27 +405,25 @@ func GetSectionRotationItems(c *cli.Context, userId, viewId string) ([]*SimpleSe
 			})
 		}
 
-		sectionList = append(sectionList, &sectionInfo)
+		sectionList[idx] = &sectionInfo
 	}
 
 	return sectionList, nil
 }
 
-func DeleteStore(c *cli.Context, storeId string) (*platformclientmodels.StoreInfo, error) {
-	inputDelete := &store.DeleteStoreParams{
-		Namespace: c.String(FlagNamespace),
-		StoreID:   storeId,
-	}
-
-	ok, errOK := storeService.DeleteStoreShort(inputDelete)
-	if errOK != nil {
-		logrus.Errorf("could not delete store %s", errOK)
-
-		return nil, errOK
-	}
-
-	return ok, nil
-}
+//func DeleteStore(c *cli.Context, storeId string) (*platformclientmodels.StoreInfo, error) {
+//	inputDelete := &store.DeleteStoreParams{
+//		Namespace: c.String(FlagNamespace),
+//		StoreID:   storeId,
+//	}
+//
+//	ok, err := storeService.DeleteStoreShort(inputDelete)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return ok, nil
+//}
 
 func GrantEntitlement(c *cli.Context, storeID string, userID string, itemID string, count int32) (string, error) {
 	entitlementWrapper := platform.EntitlementService{

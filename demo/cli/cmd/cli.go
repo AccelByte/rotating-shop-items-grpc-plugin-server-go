@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/section"
 	"github.com/urfave/cli/v2"
 
 	"accelbyte.net/rotating-shop-items-cli/config"
@@ -30,86 +30,115 @@ const (
 	FlagExtendAppName = "extendAppName"
 )
 
-func getRotatingShopItemHandler(c *cli.Context, cfg *config.Config) error {
+func runRotatingShopDemo(c *cli.Context, cfg *config.Config) error {
 	clientSvc, err := platformservice.NewClient(c.String(FlagBaseUrl), &tokenRepo)
 	if err != nil {
 		return err
 	}
 	platformClientSvc = clientSvc
 
+	fmt.Printf("Login to AccelByte... ")
 	userInfo, err := TokenGrantV3(c)
 	if err != nil {
 		return err
 	}
+	fmt.Println("[OK]")
+	fmt.Printf("\tUser: %s %s\n", userInfo.UserName, Val(userInfo.UserID))
 
-	log.Infof("getting grpc server response... ")
-
-	log.Infof("Configuring platform service grpc target... ")
+	fmt.Printf("Configuring platform service grpc target... ")
 	err = SetPlatformServiceGrpcTarget(c)
 	if err != nil {
 		return err
 	}
+	fmt.Println("[OK]")
 
-	log.Infof("Creating store... ")
+	fmt.Printf("Creating store... ")
 	storeId, err := CreateStore(c)
 	if err != nil {
 		return err
 	}
+	fmt.Println("[OK]")
+	fmt.Printf("\tStoreID: %s\n", storeId)
 
 	defer func() {
 		//DeleteStore(c, storeId)
 	}()
 
-	log.Infof("Creating category... ")
+	fmt.Printf("Creating category %s... ", c.String(FlagCategoryPath))
 	err = CreateCategory(c, storeId)
 	if err != nil {
 		return err
 	}
+	fmt.Println("[OK]")
 
-	log.Infof("Creating store view... ")
+	fmt.Printf("Creating store view... ")
 	viewId, err := CreateStoreView(c, storeId)
 	if err != nil {
 		return err
 	}
+	fmt.Println("[OK]")
+	fmt.Printf("\tViewID: %s\n", viewId)
 
-	log.Infof("Creating section with Items...")
-	sectionInfo, items, err := CreateSectionsWithItems(c, storeId, viewId, 5, true)
+	itemCount := 5
+	fmt.Printf("Creating section with %d items... ", itemCount)
+	sectionInfo, items, err := CreateSectionsWithItems(c, storeId, viewId, itemCount, true)
 	if err != nil {
 		return err
 	}
+	fmt.Println("[OK]")
+	fmt.Printf("\tSectionID: %s\n", sectionInfo.ID)
 
-	if c.String(FlagRunMode) == "backfill" {
-		entitlementID, err := GrantEntitlement(c, storeId, Val(userInfo.UserID), items[0].ID, 1)
-		if err != nil {
-			return fmt.Errorf("unable to grant entitlement: %s", err)
-		}
-
-		log.Infof("Entitlement granted: %s\n", entitlementID)
-
-		log.Infof("Enabling custom backfill for section... ")
-		err = enableFixedRotationWithCustomBackfillForSection(c, storeId, sectionInfo.ID, true)
-		if err != nil {
-			return err
-		}
-	} else {
-		log.Infof("Enabling custom rotation for section... ")
-		err = enableCustomRotationForSection(c, storeId, sectionInfo.ID, true)
-		if err != nil {
-			return err
-		}
+	// --------
+	fmt.Println("[Testing BackFill]")
+	fmt.Printf("Granting entitlement for item: %s to user: %s... ", items[0].ID, Val(userInfo.UserID))
+	_, err = GrantEntitlement(c, storeId, Val(userInfo.UserID), items[0].ID, 1)
+	if err != nil {
+		return err
 	}
+	fmt.Println("[OK]")
 
-	log.Infof("Getting active sections's rotation Items... ")
+	fmt.Printf("Enabling custom backfill for section %s... ", sectionInfo.ID)
+	err = enableFixedRotationWithCustomBackfillForSection(c, storeId, sectionInfo.ID, true)
+	if err != nil {
+		return err
+	}
+	fmt.Println("[OK]")
+
+	fmt.Printf("Getting active sections's rotation items... ")
+	_, err = GetSectionRotationItems(c, Val(userInfo.UserID), viewId)
+	// assuming the customer doesn't modify sample app, it should be response with random
+	// item id which basically not exists in accelbyte and result in not found error
+	_, isNotFoundErr := err.(*section.PublicListActiveSectionsNotFound)
+	if err != nil && !isNotFoundErr {
+		return err
+	}
+	fmt.Printf(" expect not found: %t ", isNotFoundErr)
+	fmt.Println("[OK]")
+
+	// --------
+	fmt.Println("[Testing Custom Rotation Items]")
+	fmt.Printf("Enabling custom rotation for section %s... ", sectionInfo.ID)
+	err = enableCustomRotationForSection(c, storeId, sectionInfo.ID, true)
+	if err != nil {
+		return err
+	}
+	fmt.Println("[OK]")
+
+	fmt.Printf("Getting active sections's rotation items... ")
 	resp, err := GetSectionRotationItems(c, Val(userInfo.UserID), viewId)
 	if err != nil {
 		return err
 	}
+	fmt.Println("[OK]")
 
 	jsonData, err := json.MarshalIndent(resp, "", "  ")
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(jsonData))
+	fmt.Printf("Current rotation response: %s\n", string(jsonData))
+
+	fmt.Println("[SUCCESS]")
+
 	return nil
 }
 
@@ -182,7 +211,7 @@ func GetCLIApp(cfg *config.Config) *cli.App {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			return getRotatingShopItemHandler(c, cfg)
+			return runRotatingShopDemo(c, cfg)
 		},
 	}
 

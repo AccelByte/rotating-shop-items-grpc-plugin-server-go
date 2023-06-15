@@ -39,5 +39,6 @@ func Get() *Config {
 		AccelByteBaseURL: defaultAccelByteBaseURL,
 	}
 	_ = env.Parse(cfg)
+
 	return cfg
 }

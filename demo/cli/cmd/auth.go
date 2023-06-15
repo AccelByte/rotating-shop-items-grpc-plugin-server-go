@@ -5,7 +5,6 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/factory"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/iam"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils/auth"
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
 
@@ -24,9 +22,9 @@ var (
 )
 
 func TokenGrantV3(c *cli.Context) (*iamclientmodels.ModelUserResponseV3, error) {
-	err := os.Setenv("AB_CLIENT_ID", c.String(FlagClientId))
-	err = os.Setenv("AB_CLIENT_SECRET", c.String(FlagClientSecret))
-	err = os.Setenv("AB_BASE_URL", c.String(FlagBaseUrl))
+	_ = os.Setenv("AB_CLIENT_ID", c.String(FlagClientId))
+	_ = os.Setenv("AB_CLIENT_SECRET", c.String(FlagClientSecret))
+	_ = os.Setenv("AB_BASE_URL", c.String(FlagBaseUrl))
 
 	oauth := &iam.OAuth20Service{
 		Client:           factory.NewIamClient(&configRepo),
@@ -34,11 +32,9 @@ func TokenGrantV3(c *cli.Context) (*iamclientmodels.ModelUserResponseV3, error) 
 		TokenRepository:  &tokenRepo,
 	}
 
-	err = oauth.LoginUser(c.String(FlagUsername), c.String(FlagPassword))
+	err := oauth.LoginUser(c.String(FlagUsername), c.String(FlagPassword))
 	if err != nil {
-		logrus.Print("failed login user.")
-	} else {
-		logrus.Print("successful login.")
+		return nil, err
 	}
 
 	usersService := &iam.UsersService{
@@ -50,7 +46,6 @@ func TokenGrantV3(c *cli.Context) (*iamclientmodels.ModelUserResponseV3, error) 
 	if err != nil {
 		log.Fatalf("Get user info failed: %s\n", err)
 	}
-	fmt.Printf("\tUser: %s %s\n", userInfo.UserName, Val(userInfo.UserID))
 
 	return userInfo, nil
 }
