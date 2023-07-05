@@ -3,14 +3,9 @@ module accelbyte.net/rotating-shop-items-cli
 go 1.18
 
 require (
-	github.com/AccelByte/accelbyte-go-sdk v0.45.1
+	github.com/AccelByte/accelbyte-go-sdk v0.48.0
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/go-openapi/errors v0.20.3
-	github.com/go-openapi/runtime v0.19.29
 	github.com/go-openapi/strfmt v0.20.1
-	github.com/go-openapi/swag v0.19.15
-	github.com/go-openapi/validate v0.20.2
-	github.com/sirupsen/logrus v1.9.3
 	github.com/urfave/cli/v2 v2.25.5
 )
 
@@ -22,10 +17,14 @@ require (
 	github.com/go-logr/logr v1.2.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v0.20.0 // indirect
+	github.com/go-openapi/errors v0.20.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/loads v0.20.2 // indirect
+	github.com/go-openapi/runtime v0.19.29 // indirect
 	github.com/go-openapi/spec v0.20.3 // indirect
+	github.com/go-openapi/swag v0.19.15 // indirect
+	github.com/go-openapi/validate v0.20.2 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
@@ -35,6 +34,7 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.mongodb.org/mongo-driver v1.5.1 // indirect
 	go.opentelemetry.io/contrib/propagators/aws v1.4.0 // indirect

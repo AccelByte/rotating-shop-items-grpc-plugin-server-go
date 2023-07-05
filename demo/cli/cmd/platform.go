@@ -14,6 +14,7 @@ import (
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/entitlement"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/item"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/section"
+	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/service_plugin_config"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/store"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/view"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclientmodels"
@@ -22,9 +23,6 @@ import (
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/tests/integration"
 	"github.com/go-openapi/strfmt"
 	"github.com/urfave/cli/v2"
-
-	"accelbyte.net/rotating-shop-items-cli/pkg/client/platformservice"
-	"accelbyte.net/rotating-shop-items-cli/pkg/client/platformservice/openapi2/models"
 )
 
 var (
@@ -67,8 +65,6 @@ var (
 	currencyNamespace = "accelbyte"
 )
 
-var platformClientSvc *platformservice.Client
-
 const AlphaChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const durationTwoDays = time.Hour * 24 * 2
 
@@ -84,27 +80,43 @@ type SimpleSectionInfo struct {
 }
 
 func SetPlatformServiceGrpcTarget(c *cli.Context) error {
+	servicePluginCfgWrapper := platform.ServicePluginConfigService{
+		Client:           factory.NewPlatformClient(&configRepo),
+		ConfigRepository: &configRepo,
+		TokenRepository:  &tokenRepo,
+	}
+
 	if c.String(FlagGrpcUrl) != "" {
 		fmt.Printf("(Custom Host: %s) ", c.String(FlagGrpcUrl))
 
-		return platformClientSvc.UpdateSectionPluginConfig(c.String(FlagNamespace), &models.SectionPluginConfigUpdate{
-			ExtendType: Ptr(models.SectionPluginConfigUpdateExtendTypeCUSTOM),
-			CustomConfig: &models.BaseCustomConfig{
-				ConnectionType:    Ptr(models.BaseCustomConfigConnectionTypeINSECURE),
-				GrpcServerAddress: Ptr(c.String(FlagGrpcUrl)),
+		_, err := servicePluginCfgWrapper.UpdateSectionPluginConfigShort(&service_plugin_config.UpdateSectionPluginConfigParams{
+			Namespace: c.String(FlagNamespace),
+			Body: &platformclientmodels.SectionPluginConfigUpdate{
+				ExtendType: Ptr(platformclientmodels.SectionPluginConfigUpdateExtendTypeCUSTOM),
+				CustomConfig: &platformclientmodels.BaseCustomConfig{
+					ConnectionType:    Ptr(platformclientmodels.BaseCustomConfigConnectionTypeINSECURE),
+					GrpcServerAddress: Ptr(c.String(FlagGrpcUrl)),
+				},
 			},
 		})
+
+		return err
 	}
 
 	if c.String(FlagExtendAppName) != "" {
 		fmt.Printf("(Extend App: %s) ", c.String(FlagExtendAppName))
 
-		return platformClientSvc.UpdateSectionPluginConfig(c.String(FlagNamespace), &models.SectionPluginConfigUpdate{
-			ExtendType: Ptr(models.SectionPluginConfigUpdateExtendTypeAPP),
-			AppConfig: &models.AppConfig{
-				AppName: Ptr(c.String(FlagExtendAppName)),
+		_, err := servicePluginCfgWrapper.UpdateSectionPluginConfigShort(&service_plugin_config.UpdateSectionPluginConfigParams{
+			Namespace: c.String(FlagNamespace),
+			Body: &platformclientmodels.SectionPluginConfigUpdate{
+				ExtendType: Ptr(platformclientmodels.SectionPluginConfigUpdateExtendTypeAPP),
+				AppConfig: &platformclientmodels.AppConfig{
+					AppName: Ptr(c.String(FlagExtendAppName)),
+				},
 			},
 		})
+
+		return err
 	}
 
 	return nil

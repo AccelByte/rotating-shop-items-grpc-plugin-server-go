@@ -12,7 +12,6 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"accelbyte.net/rotating-shop-items-cli/config"
-	"accelbyte.net/rotating-shop-items-cli/pkg/client/platformservice"
 )
 
 const DefaultCategoryPath = "/goRotatingShopItemsDemoCli"
@@ -31,12 +30,6 @@ const (
 )
 
 func runRotatingShopDemo(c *cli.Context, cfg *config.Config) error {
-	clientSvc, err := platformservice.NewClient(c.String(FlagBaseUrl), &tokenRepo)
-	if err != nil {
-		return err
-	}
-	platformClientSvc = clientSvc
-
 	fmt.Printf("Login to AccelByte... ")
 	userInfo, err := TokenGrantV3(c)
 	if err != nil {
