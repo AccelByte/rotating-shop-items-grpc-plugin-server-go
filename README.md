@@ -264,13 +264,13 @@ in local development environment to the internet so that it can be called by
 7. Set the necessary environment variables in [.env.example](demo/cli/.env.example) and run the [Makefile](Makefile) CLI command. The CLI will set up the necessary configuration and then give you instructions on how to configure platform service. If successful, the word `[SUCCESS]` will be print out in the terminal.
 
    ```
-   AB_BASE_URL='https://demo.accelbyte.io'
-   AB_CLIENT_ID='xxxxxxxxxx'       # Use Client ID from the previous step
-   AB_CLIENT_SECRET='xxxxxxxxxx'   # Use Client secret from the previous step
-   AB_NAMESPACE='xxxxxxxxxx'       # Use your Namespace ID
-   AB_USERNAME='xxxxxxxxxx'       # Use your Namespace Username
-   AB_PASSWORD='xxxxxxxxxx'       # Use your Namespace Password
-   GRPC_SERVER_URL='0.tcp.ap.ngrok.io:xxxxx'   # Use your ngrok forwarding URL without `https://`
+   AB_BASE_URL=https://demo.accelbyte.io
+   AB_CLIENT_ID=xxxxxxxxxx       # Use Client ID from the previous step
+   AB_CLIENT_SECRET=xxxxxxxxxx   # Use Client secret from the previous step
+   AB_NAMESPACE=xxxxxxxxxx       # Use your Namespace ID
+   AB_USERNAME=xxxxxxxxxx        # Use your Namespace Username
+   AB_PASSWORD=xxxxxxxxxx        # Use your Namespace Password
+   GRPC_SERVER_URL=0.tcp.ap.ngrok.io:xxxxx   # Use your ngrok forwarding URL without `https://`
    ```
    then run in the terminal
    ```
