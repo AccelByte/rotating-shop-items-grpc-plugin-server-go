@@ -26,8 +26,8 @@ func NewSectionServiceServer() (*SectionServiceServer, error) {
 	return &SectionServiceServer{}, nil
 }
 
-func (s SectionServiceServer) GetRotationItems(ctx context.Context, request *pb.GetRotationItemsRequest) (*pb.GetRotationItemsResponse, error) {
-	logrus.Infof("GetRotationItems Request: %s", LogJSONFormatter(request))
+func (s SectionServiceServer) GetRotationItems(_ context.Context, request *pb.GetRotationItemsRequest) (*pb.GetRotationItemsResponse, error) {
+	logrus.Infof("GetRotationItems Request: %s", logJSONFormatter(request))
 
 	inputCount := len(request.GetSectionObject().GetItems())
 	currentPoint := time.Now().Hour()
@@ -45,13 +45,13 @@ func (s SectionServiceServer) GetRotationItems(ctx context.Context, request *pb.
 		Items:     responseItems,
 		ExpiredAt: 0,
 	}
-	logrus.Infof("GetRotationItems Response: %s", LogJSONFormatter(resp))
+	logrus.Infof("GetRotationItems Response: %s", logJSONFormatter(resp))
 
 	return &resp, nil
 }
 
-func (s SectionServiceServer) Backfill(ctx context.Context, request *pb.BackfillRequest) (*pb.BackfillResponse, error) {
-	logrus.Infof("Backfill Request: %s", LogJSONFormatter(request))
+func (s SectionServiceServer) Backfill(_ context.Context, request *pb.BackfillRequest) (*pb.BackfillResponse, error) {
+	logrus.Infof("Backfill Request: %s", logJSONFormatter(request))
 
 	var newItems []*pb.BackfilledItemObject
 
@@ -69,7 +69,7 @@ func (s SectionServiceServer) Backfill(ctx context.Context, request *pb.Backfill
 	}
 
 	resp := &pb.BackfillResponse{BackfilledItems: newItems}
-	logrus.Infof("Backfill Response: %s", LogJSONFormatter(resp))
+	logrus.Infof("Backfill Response: %s", logJSONFormatter(resp))
 
 	return resp, nil
 }
