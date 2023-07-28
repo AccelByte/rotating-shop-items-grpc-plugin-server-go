@@ -1,8 +1,8 @@
-// Copyright (c) 2023 AccelByte Inc. All Rights Reserved.
+// Copyright (c) 2022 AccelByte Inc. All Rights Reserved.
 // This is licensed software from AccelByte Inc, for limitations
 // and restrictions contact your company contract manager.
 
-package server
+package common
 
 import (
 	"context"
@@ -77,7 +77,7 @@ func getNamespace() string {
 }
 
 func getResourceName() string {
-	return GetEnv("AB_RESOURCE_NAME", "ROTATINGSHOPITEMSGRPCSERVICE")
+	return GetEnv("AB_RESOURCE_NAME", "CHATGRPCSERVICE")
 }
 
 func getRequiredPermission() validator.Permission {

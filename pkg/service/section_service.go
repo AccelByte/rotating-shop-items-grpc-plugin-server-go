@@ -2,7 +2,7 @@
 // This is licensed software from AccelByte Inc, for limitations
 // and restrictions contact your company contract manager.
 
-package server
+package service
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 
 	pb "rotating-shop-items-grpc-plugin-server-go/pkg/pb"
 )
@@ -27,8 +26,6 @@ func NewSectionServiceServer() (*SectionServiceServer, error) {
 }
 
 func (s SectionServiceServer) GetRotationItems(_ context.Context, request *pb.GetRotationItemsRequest) (*pb.GetRotationItemsResponse, error) {
-	logrus.Infof("GetRotationItems Request: %s", logJSONFormatter(request))
-
 	inputCount := len(request.GetSectionObject().GetItems())
 	currentPoint := time.Now().Hour()
 	selectedIndex := int(math.Floor((float64(inputCount) / float64(upperLimit)) * float64(currentPoint)))
@@ -45,14 +42,10 @@ func (s SectionServiceServer) GetRotationItems(_ context.Context, request *pb.Ge
 		Items:     responseItems,
 		ExpiredAt: 0,
 	}
-	logrus.Infof("GetRotationItems Response: %s", logJSONFormatter(resp))
-
 	return &resp, nil
 }
 
 func (s SectionServiceServer) Backfill(_ context.Context, request *pb.BackfillRequest) (*pb.BackfillResponse, error) {
-	logrus.Infof("Backfill Request: %s", logJSONFormatter(request))
-
 	var newItems []*pb.BackfilledItemObject
 
 	for _, item := range request.GetItems() {
@@ -68,8 +61,5 @@ func (s SectionServiceServer) Backfill(_ context.Context, request *pb.BackfillRe
 		}
 	}
 
-	resp := &pb.BackfillResponse{BackfilledItems: newItems}
-	logrus.Infof("Backfill Response: %s", logJSONFormatter(resp))
-
-	return resp, nil
+	return &pb.BackfillResponse{BackfilledItems: newItems}, nil
 }

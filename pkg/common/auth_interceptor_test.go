@@ -1,8 +1,8 @@
-// Copyright (c) 2023 AccelByte Inc. All Rights Reserved.
+// Copyright (c) 2022 AccelByte Inc. All Rights Reserved.
 // This is licensed software from AccelByte Inc, for limitations
 // and restrictions contact your company contract manager.
 
-package server
+package common
 
 import (
 	"context"
@@ -34,7 +34,7 @@ func TestUnaryAuthServerIntercept(t *testing.T) {
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.New(md))
 	action := 2
 	namespace := "test-accelbyte"
-	resourceName := "test-ROTATINGSHOPITEMSGRPCSERVICE"
+	resourceName := "test-CHATGRPCSERVICE"
 	perm := validator.Permission{
 		Action:   action,
 		Resource: fmt.Sprintf("NAMESPACE:%s:%s", namespace, resourceName),
