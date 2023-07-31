@@ -53,8 +53,26 @@ func runRotatingShopDemo(c *cli.Context, cfg *config.Config) error {
 	fmt.Println("[OK]")
 	fmt.Printf("\tStoreID: %s\n", storeId)
 
+	fmt.Printf("Setting up currency (%s)... ", currencyCode)
+	err = CreateCurrency(c)
+	if err != nil {
+		return err
+	}
+	fmt.Println("[OK]")
+
 	defer func() {
-		//DeleteStore(c, storeId)
+		fmt.Print("Deleting currency... ")
+		if err := DeleteCurrency(c); err != nil {
+			return
+		}
+		fmt.Println("[OK]")
+
+		fmt.Print("Deleting store...")
+		if _, err := DeleteStore(c, storeId); err != nil {
+			return
+		}
+		fmt.Println("[OK]")
+
 	}()
 
 	fmt.Printf("Creating category %s... ", c.String(FlagCategoryPath))

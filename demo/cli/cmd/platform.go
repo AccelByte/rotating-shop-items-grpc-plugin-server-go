@@ -11,6 +11,7 @@ import (
 
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/catalog_changes"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/category"
+	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/currency"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/entitlement"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/item"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/section"
@@ -61,8 +62,7 @@ var (
 	abViewName   = "Go Item Rotation Default View Demo/CLI 006"
 	displayOrder = int32(1)
 
-	currencyCode      = "USD"
-	currencyNamespace = "accelbyte"
+	currencyCode = "USDT1"
 )
 
 const AlphaChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -120,6 +120,48 @@ func SetPlatformServiceGrpcTarget(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func CreateCurrency(c *cli.Context) error {
+	currencyWrapper := platform.CurrencyService{
+		Client:           factory.NewPlatformClient(&configRepo),
+		ConfigRepository: &configRepo,
+		TokenRepository:  &tokenRepo,
+	}
+	curr, err := currencyWrapper.GetCurrencySummaryShort(&currency.GetCurrencySummaryParams{
+		CurrencyCode: currencyCode,
+		Namespace:    c.String(FlagNamespace),
+	})
+	if err == nil && curr != nil {
+		// already exists
+		return nil
+	}
+
+	_, err = currencyWrapper.CreateCurrencyShort(&currency.CreateCurrencyParams{
+		Namespace: c.String(FlagNamespace),
+		Body: &platformclientmodels.CurrencyCreate{
+			CurrencyCode:   Ptr(currencyCode),
+			CurrencySymbol: "USDT1$",
+			CurrencyType:   platformclientmodels.CurrencyCreateCurrencyTypeREAL,
+			Decimals:       2,
+		},
+	})
+
+	return err
+}
+
+func DeleteCurrency(c *cli.Context) error {
+	currencyWrapper := platform.CurrencyService{
+		Client:           factory.NewPlatformClient(&configRepo),
+		ConfigRepository: &configRepo,
+		TokenRepository:  &tokenRepo,
+	}
+	_, err := currencyWrapper.DeleteCurrencyShort(&currency.DeleteCurrencyParams{
+		Namespace:    c.String(FlagNamespace),
+		CurrencyCode: currencyCode,
+	})
+
+	return err
 }
 
 func CreateStore(c *cli.Context) (string, error) {
@@ -231,7 +273,7 @@ func CreateItems(c *cli.Context, storeId, itemDiff string, itemCount int, doPubl
 			"US": {
 				{
 					CurrencyCode:      &currencyCode,
-					CurrencyNamespace: &currencyNamespace,
+					CurrencyNamespace: Ptr(c.String(FlagNamespace)),
 					CurrencyType:      Ptr(platformclientmodels.RegionDataItemCurrencyTypeREAL),
 					Price:             &price,
 				},
@@ -423,19 +465,19 @@ func GetSectionRotationItems(c *cli.Context, userId, viewId string) ([]*SimpleSe
 	return sectionList, nil
 }
 
-//func DeleteStore(c *cli.Context, storeId string) (*platformclientmodels.StoreInfo, error) {
-//	inputDelete := &store.DeleteStoreParams{
-//		Namespace: c.String(FlagNamespace),
-//		StoreID:   storeId,
-//	}
-//
-//	ok, err := storeService.DeleteStoreShort(inputDelete)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return ok, nil
-//}
+func DeleteStore(c *cli.Context, storeId string) (*platformclientmodels.StoreInfo, error) {
+	inputDelete := &store.DeleteStoreParams{
+		Namespace: c.String(FlagNamespace),
+		StoreID:   storeId,
+	}
+
+	ok, err := storeService.DeleteStoreShort(inputDelete)
+	if err != nil {
+		return nil, err
+	}
+
+	return ok, nil
+}
 
 func GrantEntitlement(c *cli.Context, storeID string, userID string, itemID string, count int32) (string, error) {
 	entitlementWrapper := platform.EntitlementService{
