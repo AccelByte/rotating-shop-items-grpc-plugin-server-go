@@ -68,7 +68,7 @@ func runRotatingShopDemo(c *cli.Context, cfg *config.Config) error {
 		fmt.Println("[OK]")
 
 		fmt.Print("Deleting store...")
-		if _, err := DeleteStore(c, storeId); err != nil {
+		if err := DeleteStore(c, storeId); err != nil {
 			return
 		}
 		fmt.Println("[OK]")

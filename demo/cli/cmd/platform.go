@@ -174,7 +174,7 @@ func CreateStore(c *cli.Context) (string, error) {
 	}
 
 	for _, s := range storeInfo {
-		if Val(s.Published) == false {
+		if !Val(s.Published) {
 			_, _ = storeService.DeleteStoreShort(&store.DeleteStoreParams{
 				Namespace: c.String(FlagNamespace),
 				StoreID:   Val(s.StoreID),
@@ -465,18 +465,22 @@ func GetSectionRotationItems(c *cli.Context, userId, viewId string) ([]*SimpleSe
 	return sectionList, nil
 }
 
-func DeleteStore(c *cli.Context, storeId string) (*platformclientmodels.StoreInfo, error) {
+func DeleteStore(c *cli.Context, storeId string) error {
 	inputDelete := &store.DeleteStoreParams{
 		Namespace: c.String(FlagNamespace),
 		StoreID:   storeId,
 	}
 
-	ok, err := storeService.DeleteStoreShort(inputDelete)
+	_, err := storeService.DeleteStoreShort(inputDelete)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return ok, nil
+	_, err = storeService.DeletePublishedStoreShort(&store.DeletePublishedStoreParams{
+		Namespace: c.String(FlagNamespace),
+	})
+
+	return fmt.Errorf("delete published store error: %w", err)
 }
 
 func GrantEntitlement(c *cli.Context, storeID string, userID string, itemID string, count int32) (string, error) {
