@@ -3,7 +3,7 @@ module rotating-shop-items-grpc-plugin-server-go
 go 1.18
 
 require (
-	github.com/AccelByte/accelbyte-go-sdk v0.55.0
+	github.com/AccelByte/accelbyte-go-sdk v0.59.1
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0-rc.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.5
