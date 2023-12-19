@@ -4,9 +4,9 @@
 
 SHELL := /bin/bash
 
+BUILDER := grpc-plugin-server-builder
 GOLANG_DOCKER_IMAGE := golang:1.18
 IMAGE_NAME := $(shell basename "$$(pwd)")-app
-BUILDER := grpc-plugin-server-builder
 
 proto:
 	rm -rfv pkg/pb/*
@@ -44,3 +44,8 @@ imagex_push:
 	docker buildx inspect $(BUILDER) || docker buildx create --name $(BUILDER) --use
 	docker buildx build -t ${REPO_URL}:${IMAGE_TAG} --platform linux/arm64/v8,linux/amd64 --push .
 	docker buildx rm --keep-state $(BUILDER)
+
+ngrok:
+	@test -n "$(NGROK_AUTHTOKEN)" || (echo "NGROK_AUTHTOKEN is not set" ; exit 1)
+	docker run --rm -it --net=host -e NGROK_AUTHTOKEN=$(NGROK_AUTHTOKEN) ngrok/ngrok:3-alpine \
+			tcp 6565	# gRPC server port
