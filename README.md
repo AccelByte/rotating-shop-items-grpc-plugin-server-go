@@ -273,6 +273,40 @@ public IP, we can use something like [ngrok](https://ngrok.com/).
 
 > :warning: **Ngrok free plan has some limitations**: You may want to use paid plan if the traffic is high.
 
+### Test Observability
+
+To be able to see the how the observability works in this sample app locally, there are few things that need be setup before performing tests.
+
+1. Uncomment loki logging driver in [docker-compose.yaml](docker-compose.yaml)
+
+   ```
+    # logging:
+    #   driver: loki
+    #   options:
+    #     loki-url: http://host.docker.internal:3100/loki/api/v1/push
+    #     mode: non-blocking
+    #     max-buffer-size: 4m
+    #     loki-retries: "3"
+   ```
+
+   > :warning: **Make sure to install docker loki plugin beforehand**: Otherwise,
+   this sample app will not be able to run. This is required so that container logs
+   can flow to the `loki` service within `grpc-plugin-dependencies` stack. 
+   Use this command to install docker loki plugin: `docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions`.
+
+2. Clone and run [grpc-plugin-dependencies](https://github.com/AccelByte/grpc-plugin-dependencies) stack alongside this sample app. After this, Grafana 
+will be accessible at http://localhost:3000.
+
+   ```
+   git clone https://github.com/AccelByte/grpc-plugin-dependencies.git
+   cd grpc-plugin-dependencies
+   docker-compose up
+   ```
+
+   > :exclamation: More information about [grpc-plugin-dependencies](https://github.com/AccelByte/grpc-plugin-dependencies) is available [here](https://github.com/AccelByte/grpc-plugin-dependencies/blob/main/README.md).
+
+3. Perform testing. For example, by following [Test in Local Development Environment](#test-in-local-development-environment) or [Test with AccelByte Gaming Services](#test-with-accelbyte-gaming-services).
+
 ## Deploying
 
 After done testing, you may want to deploy this app to `AccelByte Gaming Services`.
