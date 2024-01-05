@@ -72,7 +72,6 @@ func runRotatingShopDemo(c *cli.Context, cfg *config.Config) error {
 			return
 		}
 		fmt.Println("[OK]")
-
 	}()
 
 	fmt.Printf("Creating category %s... ", c.String(FlagCategoryPath))

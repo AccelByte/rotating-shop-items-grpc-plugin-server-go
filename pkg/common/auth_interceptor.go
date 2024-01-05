@@ -9,13 +9,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/iam"
 	"github.com/pkg/errors"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-)
-
-import (
-	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/iam"
 )
 
 var OAuth *iam.OAuth20Service

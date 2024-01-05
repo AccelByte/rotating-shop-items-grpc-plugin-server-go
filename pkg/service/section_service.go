@@ -42,6 +42,7 @@ func (s SectionServiceServer) GetRotationItems(_ context.Context, request *pb.Ge
 		Items:     responseItems,
 		ExpiredAt: 0,
 	}
+
 	return &resp, nil
 }
 
