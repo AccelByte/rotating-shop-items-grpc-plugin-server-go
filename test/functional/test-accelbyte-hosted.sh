@@ -134,6 +134,17 @@ if ! [ "$STATUS" = "R" ]; then
     exit 1
 fi
 
+echo '# Check environment variables'
+
+variables=(AB_BASE_URL AB_CLIENT_ID AB_CLIENT_SECRET AB_NAMESPACE AB_USERNAME AB_PASSWORD NGROK_AUTHTOKEN)
+
+for variable_name in "${variables[@]}"; do
+  if [ -z "${!variable_name}" ]; then
+    echo "Variable $variable_name is empty"
+    exit 1
+  fi
+done
+
 echo '# Testing Extend app using demo CLI'
 
 (cd demo/cli && go run . rotatingShop -n "${AB_NAMESPACE}" -b "${AB_BASE_URL}" -i "${AB_CLIENT_ID}" -s "${AB_CLIENT_SECRET}" -u "${AB_USERNAME}" -p "${AB_PASSWORD}" -a /customitemtestexample -e "$APP_NAME" -m backfill)
