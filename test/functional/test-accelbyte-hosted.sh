@@ -136,4 +136,4 @@ fi
 
 echo '# Testing Extend app using demo CLI'
 
-(cd demo/cli && EXTEND_APP_NAME=$APP_NAME go run . rotatingShop -n "${AB_NAMESPACE}" -b "${AB_BASE_URL}" -i "${AB_CLIENT_ID}" -s "${AB_CLIENT_SECRET}" -u "${AB_USERNAME}" -p "${AB_PASSWORD}" -a /customitemtestexample -g "${GRPC_SERVER_URL}" -m backfill)
+(cd demo/cli && go run . rotatingShop -n "${AB_NAMESPACE}" -b "${AB_BASE_URL}" -i "${AB_CLIENT_ID}" -s "${AB_CLIENT_SECRET}" -u "${AB_USERNAME}" -p "${AB_PASSWORD}" -a /customitemtestexample -e "$APP_NAME" -m backfill)

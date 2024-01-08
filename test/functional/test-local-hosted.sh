@@ -45,4 +45,4 @@ fi
 
 echo '# Testing Extend app using demo CLI'
 
-(cd demo/cli && GRPC_SERVER_URL="${NGROK_URL#*://}" go run . rotatingShop -n "${AB_NAMESPACE}" -b "${AB_BASE_URL}" -i "${AB_CLIENT_ID}" -s "${AB_CLIENT_SECRET}" -u "${AB_USERNAME}" -p "${AB_PASSWORD}" -a /customitemtestexample -g GRPC_SERVER_URL -m backfill)
+(cd demo/cli && go run . rotatingShop -n "${AB_NAMESPACE}" -b "${AB_BASE_URL}" -i "${AB_CLIENT_ID}" -s "${AB_CLIENT_SECRET}" -u "${AB_USERNAME}" -p "${AB_PASSWORD}" -a /customitemtestexample -g "${NGROK_URL#*://}" -m backfill)
