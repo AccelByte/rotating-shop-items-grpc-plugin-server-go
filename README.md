@@ -243,7 +243,8 @@ public IP, we can use something like [ngrok](https://ngrok.com/).
    This way, the `gRPC server` will be called via `Envoy` service within `grpc-plugin-dependencies` stack instead of directly.
 
 4. [Create an OAuth Client](https://docs.accelbyte.io/guides/access/iam-client.html) with `confidential` client type with the following permissions.  Keep the `Client ID` and `Client Secret`. This is different from the Oauth Client from the Setup section and it is required by CLI demo app [here](demo/cli/) in the next step to register the `gRPC Server` URL.
-
+   > :exclamation: For AGS Starter customers, you don't need to add the permissions. All confidential IAM clients already contain the necessary permissions.
+   
    - ADMIN:NAMESPACE:{namespace}:CONFIG:SERVICEPLUGIN [READ, UPDATE, DELETE]
    - ADMIN:NAMESPACE:{namespace}:STORE [READ, CREATE, UPDATE, DELETE]
    - ADMIN:NAMESPACE:{namespace}:CATEGORY [READ, CREATE]
