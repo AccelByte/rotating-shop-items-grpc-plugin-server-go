@@ -49,7 +49,7 @@ then run the command usage
 
 The following environment variables are used by this CLI demo app.
 ```
-export AB_BASE_URL='https://demo.accelbyte.io'
+export AB_BASE_URL='https://test.accelbyte.io'
 export AB_CLIENT_ID='xxxxxxxxxx'
 export AB_CLIENT_SECRET='xxxxxxxxxx'
 
