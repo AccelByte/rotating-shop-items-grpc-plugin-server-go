@@ -73,4 +73,4 @@ test_functional_accelbyte_hosted: proto
 		--group-add $$(getent group docker | cut -d ':' -f 3) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $$(pwd):/data \
-		-w /data l
+		-w /data rotating-shop-items-test-functional bash ./test/functional/test-accelbyte-hosted.sh

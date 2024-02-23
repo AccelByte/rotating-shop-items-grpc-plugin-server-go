@@ -142,8 +142,8 @@ func CreateCurrency(c *cli.Context) error {
 		Body: &platformclientmodels.CurrencyCreate{
 			CurrencyCode:   Ptr(currencyCode),
 			CurrencySymbol: "USDT1$",
-			CurrencyType:   platformclientmodels.CurrencyCreateCurrencyTypeREAL,
-			Decimals:       2,
+			CurrencyType:   platformclientmodels.CurrencyCreateCurrencyTypeVIRTUAL,
+			Decimals:       0,
 		},
 	})
 

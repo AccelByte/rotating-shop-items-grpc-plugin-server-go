@@ -6,7 +6,7 @@ set -e
 set -o pipefail
 #set -x
 
-APP_NAME=int-test-rotating
+APP_NAME=int-test-rot
 
 get_code_verifier() 
 {
@@ -61,6 +61,17 @@ curl -sf https://api.github.com/repos/AccelByte/extend-helper-cli/releases/lates
         | grep "/extend-helper-cli-linux" | cut -d : -f 2,3 | tr -d \" \
         | curl -sL --output extend-helper-cli $(cat)
 chmod +x ./extend-helper-cli
+
+echo '# Check environment variables'
+
+variables=(AB_BASE_URL AB_CLIENT_ID AB_CLIENT_SECRET AB_NAMESPACE AB_USERNAME AB_PASSWORD NGROK_AUTHTOKEN)
+
+for variable_name in "${variables[@]}"; do
+  if [ -z "${!variable_name}" ]; then
+    echo "Variable $variable_name is empty"
+    exit 1
+  fi
+done
 
 echo '# Login user'
 
@@ -134,16 +145,14 @@ if ! [ "$STATUS" = "R" ]; then
     exit 1
 fi
 
-echo '# Check environment variables'
+APP_URL=$(api_curl "${AB_BASE_URL}/csm/v1/admin/namespaces/$AB_NAMESPACE/apps/$APP_NAME" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'content-type: application/json' | jq --raw-output .serviceURL )
 
-variables=(AB_BASE_URL AB_CLIENT_ID AB_CLIENT_SECRET AB_NAMESPACE AB_USERNAME AB_PASSWORD NGROK_AUTHTOKEN)
-
-for variable_name in "${variables[@]}"; do
-  if [ -z "${!variable_name}" ]; then
-    echo "Variable $variable_name is empty"
-    exit 1
-  fi
-done
+if [ "$APP_URL" == "null" ]; then
+  cat http_response.out
+  exit 1
+fi
 
 echo '# Testing Extend app using demo CLI'
 
