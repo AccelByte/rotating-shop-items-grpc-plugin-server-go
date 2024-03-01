@@ -38,7 +38,7 @@ flow properly when the app is deployed.
 
    d. [docker v23.x](https://docs.docker.com/engine/install/ubuntu/)
 
-   e. go 1.18
+   e. go 1.19
 
    f. git
 
