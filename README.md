@@ -50,7 +50,7 @@ flow properly when the app is deployed.
 
    a. Base URL
    
-      - For `Starter` tier e.g.  https://spaceshooter.gamingservices.accelbyte.io
+      - For `Starter` tier e.g.  https://spaceshooter.prod.gamingservices.accelbyte.io
       - For `Premium` tier e.g.  https://dev.accelbyte.io
       
    b. [Create a Game Namespace](https://docs.accelbyte.io/gaming-services/tutorials/how-to/create-a-game-namespace/) if you don't have one yet. Keep the `Namespace ID`.
@@ -246,11 +246,19 @@ public IP, we can use something like [ngrok](https://ngrok.com/).
 
 4. [Create an OAuth Client](https://docs.accelbyte.io/guides/access/iam-client.html) with `confidential` client type with the following permissions.  Keep the `Client ID` and `Client Secret`. This is different from the Oauth Client from the Setup section and it is required by CLI demo app [here](demo/cli/) in the next step to register the `gRPC Server` URL.
    
-   - ADMIN:NAMESPACE:{namespace}:CONFIG:SERVICEPLUGIN [READ, UPDATE, DELETE]
-   - ADMIN:NAMESPACE:{namespace}:STORE [READ, CREATE, UPDATE, DELETE]
-   - ADMIN:NAMESPACE:{namespace}:CATEGORY [READ, CREATE]
-   - ADMIN:NAMESPACE:{namespace}:ITEM [READ, CREATE]
-   - NAMESPACE:{namespace}:USER:{userId}:STORE [READ]
+   - For AGS Premium customers:
+      - ADMIN:NAMESPACE:{namespace}:CONFIG:SERVICEPLUGIN [READ, UPDATE, DELETE]
+      - ADMIN:NAMESPACE:{namespace}:STORE [READ, CREATE, UPDATE, DELETE]
+      - ADMIN:NAMESPACE:{namespace}:CATEGORY [CREATE]
+      - ADMIN:NAMESPACE:{namespace}:CURRENCY [READ, CREATE, DELETE]
+      - ADMIN:NAMESPACE:{namespace}:ITEM [READ, CREATE, DELETE]
+      - NAMESPACE:{namespace}:USER:{userId}:STORE [READ]
+   - For AGS Starter customers:
+      - Platform Store -> Service Plugin Config (Read, Update, Delete)
+      - Platform Store -> Store (Read, Create, Update, Delete)
+      - Platform Store -> Category (Create)
+      - Platform Store -> Currency (Read, Create, Delete)
+      - Platform Store -> Item (Read, Create, Delete)
 
    > :warning: **Oauth Client created in this step is different from the one from Setup section:** It is required by CLI demo app [here](demo/cli/) in the next step to register the `gRPC Server` URL.
 
