@@ -11,20 +11,25 @@ flowchart LR
    CL --- SV
 ```
 
-`AccelByte Gaming Services`  features can be customized by using `Extend Override`
-apps. An `Extend Override` app is essentially a `gRPC server` which contains one 
-or more custom functions which can be called by `AccelByte Gaming Services` 
+`AccelByte Gaming Services` (AGS) features can be customized with 
+`Extend Override` apps. An `Extend Override` app is a `gRPC server` which 
+contains one or more custom functions which can be called by AGS 
 instead of the default functions.
 
 ## Overview
 
-This repository contains a sample `Extend Override` app for `rotating shop items`
-written in `Go`. It provides a simple custom rotating shop items function for 
-platform service in `AccelByte Gaming Services`.
+This repository serves as a template project for an `Extend Override` 
+app for `rotating shop items` written in `Go`. You can clone this repository
+and start implementing custom functions which can then be called by AGS.
 
-This sample app also shows the instrumentation setup necessary for 
-observability. It is required so that metrics, traces, and logs are able to 
-flow properly when the app is deployed.
+By using this repository as a template project, you will get the recommended 
+authentication and authorization implemented out-of-the-box. You will also get 
+some instrumentation for observability so that metrics, traces, and 
+logs will be available when the app is deployed.
+
+As an example to get you started, this template project contains sample 
+custom  rotating shop items function for 
+platform service in `AccelByte Gaming Services`.
 
 ## Prerequisites
 
@@ -32,19 +37,13 @@ flow properly when the app is deployed.
 
    a. bash
 
-   b. curl
+   b. make
 
-   c. make
+   c. [docker v23.x](https://docs.docker.com/engine/install/ubuntu/)
 
-   d. [docker v23.x](https://docs.docker.com/engine/install/ubuntu/)
+   d. go 1.19
 
-   e. go 1.19
-
-   f. git
-
-   g. jq
-
-   h. [postman](https://www.postman.com/)
+   e. [postman](https://www.postman.com/)
 
 2. Access to `AccelByte Gaming Services` environment.
 
@@ -58,6 +57,9 @@ flow properly when the app is deployed.
    c. [Create an OAuth Client](https://docs.accelbyte.io/gaming-services/services/access/authorization/manage-access-control-for-applications/#create-an-iam-client) with confidential client type. Keep the `Client ID` and `Client Secret`.
 
 ## Setup
+
+To be able to run the sample custom functions, you will need to follow these 
+setup steps.
 
 1. Create a docker compose `.env` file by copying the content of [.env.template](.env.template) file.
 
@@ -247,12 +249,12 @@ public IP, we can use something like [ngrok](https://ngrok.com/).
 4. [Create an OAuth Client](https://docs.accelbyte.io/guides/access/iam-client.html) with `confidential` client type with the following permissions.  Keep the `Client ID` and `Client Secret`. This is different from the Oauth Client from the Setup section and it is required by CLI demo app [here](demo/cli/) in the next step to register the `gRPC Server` URL.
    
    - For AGS Premium customers:
-      - ADMIN:NAMESPACE:{namespace}:CONFIG:SERVICEPLUGIN [READ, UPDATE, DELETE]
-      - ADMIN:NAMESPACE:{namespace}:STORE [READ, CREATE, UPDATE, DELETE]
-      - ADMIN:NAMESPACE:{namespace}:CATEGORY [CREATE]
-      - ADMIN:NAMESPACE:{namespace}:CURRENCY [READ, CREATE, DELETE]
-      - ADMIN:NAMESPACE:{namespace}:ITEM [READ, CREATE, DELETE]
-      - NAMESPACE:{namespace}:USER:{userId}:STORE [READ]
+      - `ADMIN:NAMESPACE:{namespace}:CONFIG:SERVICEPLUGIN [READ,UPDATE,DELETE]`
+      - `ADMIN:NAMESPACE:{namespace}:STORE [READ,CREATE,UPDATE,DELETE]`
+      - `ADMIN:NAMESPACE:{namespace}:CATEGORY [CREATE]`
+      - `ADMIN:NAMESPACE:{namespace}:CURRENCY [READ,CREATE,DELETE]`
+      - `ADMIN:NAMESPACE:{namespace}:ITEM [READ,CREATE,DELETE]`
+      - `NAMESPACE:{namespace}:USER:{userId}:STORE [READ]`
    - For AGS Starter customers:
       - Platform Store -> Service Plugin Config (Read, Update, Delete)
       - Platform Store -> Store (Read, Create, Update, Delete)
@@ -324,15 +326,36 @@ will be accessible at http://localhost:3000.
 After done testing, you may want to deploy this app to `AccelByte Gaming Services`.
 
 1. [Create a new Extend Override App on Admin Portal](https://docs.accelbyte.io/gaming-services/services/extend/override-ags-feature/getting-started-with-rotating-shop-items-customization/#create-the-extend-app). Keep the `Repository URI`.
+
 2. Download and setup [extend-helper-cli](https://github.com/AccelByte/extend-helper-cli/) (only if it has not been done previously).
+
 3. Perform docker login with `extend-helper-cli` using the following command.
+
    ```
    extend-helper-cli dockerlogin --namespace <my-game> --app <my-app> --login
    ```
+
    > :exclamation: For your convenience, the above `extend-helper-cli` command can also be 
    copied from `Repository Authentication Command` under the corresponding app detail page.
+
 4. Build and push sample app docker image to AccelByte ECR using the following command.
+
    ```
    make imagex_push IMAGE_TAG=v0.0.1 REPO_URL=xxxxxxxxxx.dkr.ecr.us-west-2.amazonaws.com/accelbyte/justice/development/extend/xxxxxxxxxx/xxxxxxxxxx
    ```
+
    > :exclamation: **The REPO_URL is obtained from step 1**: It can be found under 'Repository URI' in the app detail.
+
+5. Open Admin Portal, go to **Extend** -> **Overridable Features**. And then select the extend app.
+
+6. To deploy selected image tag, click **Image Version History** and select 
+   desired image tag to be deployed.
+
+7. Click **Deploy Image**, confirm the deployment and go back to App Detail by 
+   clicking **Cancel**.
+
+8. Wait until app status is running.
+
+## Next Step
+
+Proceed to modify this template project and implement your own custom functions.
