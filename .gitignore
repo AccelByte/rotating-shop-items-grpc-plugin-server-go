@@ -59,4 +59,3 @@ demo/cli/cli
 
 # Binary file
 rotating-shop-items-grpc-plugin-server-go
-/pkg/pb/
