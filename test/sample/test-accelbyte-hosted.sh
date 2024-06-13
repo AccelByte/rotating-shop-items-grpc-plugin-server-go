@@ -57,9 +57,19 @@ APP_NAME="${APP_NAME}-$(echo $RANDOM | sha1sum | head -c 8)"   # Add random suff
 
 echo '# Downloading extend-helper-cli'
 
-curl -sf https://api.github.com/repos/AccelByte/extend-helper-cli/releases/latest \
+case "$(uname -s)" in
+    Darwin*)
+      curl -sf https://api.github.com/repos/AccelByte/extend-helper-cli/releases/latest \
+        | grep "/extend-helper-cli-darwin" | cut -d : -f 2,3 | tr -d \" \
+        | curl -sL --output extend-helper-cli $(cat)
+        ;;
+    *)
+      curl -sf https://api.github.com/repos/AccelByte/extend-helper-cli/releases/latest \
         | grep "/extend-helper-cli-linux" | cut -d : -f 2,3 | tr -d \" \
         | curl -sL --output extend-helper-cli $(cat)
+        ;;
+esac
+
 chmod +x ./extend-helper-cli
 
 echo '# Check environment variables'
@@ -143,15 +153,6 @@ done
 if ! [ "$STATUS" = "R" ]; then
     echo "Failed to deploy Extend app (status: $STATUS)"
     exit 1
-fi
-
-APP_URL=$(api_curl "${AB_BASE_URL}/csm/v1/admin/namespaces/$AB_NAMESPACE/apps/$APP_NAME" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H 'content-type: application/json' | jq --raw-output .serviceURL )
-
-if [ "$APP_URL" == "null" ]; then
-  cat http_response.out
-  exit 1
 fi
 
 echo '# Testing Extend app using demo CLI'
