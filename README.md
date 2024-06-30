@@ -296,17 +296,17 @@ public IP, we can use something like [ngrok](https://ngrok.com/).
    
    - For AGS Premium customers:
       - `ADMIN:NAMESPACE:{namespace}:CONFIG:SERVICEPLUGIN [READ,UPDATE,DELETE]`
-      - `ADMIN:NAMESPACE:{namespace}:STORE [READ,CREATE,UPDATE,DELETE]`
+      - `ADMIN:NAMESPACE:{namespace}:STORE [CREATE,READ,UPDATE,DELETE]`
       - `ADMIN:NAMESPACE:{namespace}:CATEGORY [CREATE]`
-      - `ADMIN:NAMESPACE:{namespace}:CURRENCY [READ,CREATE,DELETE]`
-      - `ADMIN:NAMESPACE:{namespace}:ITEM [READ,CREATE,DELETE]`
+      - `ADMIN:NAMESPACE:{namespace}:CURRENCY [CREATE,READ,DELETE]`
+      - `ADMIN:NAMESPACE:{namespace}:ITEM [CREATE,READ,DELETE]`
       - `NAMESPACE:{namespace}:USER:{userId}:STORE [READ]`
    - For AGS Starter customers:
       - Platform Store -> Service Plugin Config (Read, Update, Delete)
-      - Platform Store -> Store (Read, Create, Update, Delete)
+      - Platform Store -> Store (Create, Read, Update, Delete)
       - Platform Store -> Category (Create)
-      - Platform Store -> Currency (Read, Create, Delete)
-      - Platform Store -> Item (Read, Create, Delete)
+      - Platform Store -> Currency (Create, Read, Delete)
+      - Platform Store -> Item (Create, Read, Delete)
 
    > :warning: **Oauth Client created in this step is different from the one from Setup section:** It is required by CLI demo app [here](demo/cli/) in the next step to register the `gRPC Server` URL.
 
