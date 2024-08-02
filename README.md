@@ -95,8 +95,8 @@ platform service in `AccelByte Gaming Services`.
 
    a. Base URL
    
-      - For `Starter` tier e.g.  https://spaceshooter.prod.gamingservices.accelbyte.io
-      - For `Premium` tier e.g.  https://dev.accelbyte.io
+      - Sample URL for AGS Shared Cloud customers: `https://spaceshooter.prod.gamingservices.accelbyte.io`
+      - Sample URL for AGS Private Cloud customers:  `https://dev.accelbyte.io`
       
    b. [Create a Game Namespace](https://docs.accelbyte.io/gaming-services/tutorials/how-to/create-a-game-namespace/) if you don't have one yet. Keep the `Namespace ID`.
 
@@ -294,14 +294,14 @@ public IP, we can use something like [ngrok](https://ngrok.com/).
 
 4. [Create an OAuth Client](https://docs.accelbyte.io/guides/access/iam-client.html) with `confidential` client type with the following permissions.  Keep the `Client ID` and `Client Secret`. This is different from the Oauth Client from the Setup section and it is required by CLI demo app [here](demo/cli/) in the next step to register the `gRPC Server` URL.
    
-   - For AGS Premium customers:
+   - For AGS Private Cloud customers:
       - `ADMIN:NAMESPACE:{namespace}:CONFIG:SERVICEPLUGIN [READ,UPDATE,DELETE]`
       - `ADMIN:NAMESPACE:{namespace}:STORE [CREATE,READ,UPDATE,DELETE]`
       - `ADMIN:NAMESPACE:{namespace}:CATEGORY [CREATE]`
       - `ADMIN:NAMESPACE:{namespace}:CURRENCY [CREATE,READ,DELETE]`
       - `ADMIN:NAMESPACE:{namespace}:ITEM [CREATE,READ,DELETE]`
       - `NAMESPACE:{namespace}:USER:{userId}:STORE [READ]`
-   - For AGS Starter customers:
+   - For AGS Shared Cloud customers:
       - Platform Store -> Service Plugin Config (Read, Update, Delete)
       - Platform Store -> Store (Create, Read, Update, Delete)
       - Platform Store -> Category (Create)
