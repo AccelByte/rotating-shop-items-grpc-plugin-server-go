@@ -32,14 +32,14 @@ sequenceDiagram
 
 ## Build
 
-To build this CLI sample app, execute the following command in the working CLI directory.
+To build this demo CLI app, execute the following command in the working CLI directory.
 
 ```bash
-$ go build .
+go build .
 ```
 and install the binary file
 ```bash
-$ go install accelbyte.net/rotating-shop-items-cli
+go install accelbyte.net/rotating-shop-items-cli
 ```
 then run the command usage
 
@@ -67,9 +67,9 @@ CLI demo app requires 2 parameters. first is the grpc server url, and second is 
 
 - With all environment variables setup
 ```bash
-$ rotating-shop-items-cli rotatingShop -n accelbyte -b http://localhost:8081 -i clientId -s clientSecret -u username123 -p password123 -a /customitemtestexample -g localhost:6565 -m backfill
+rotating-shop-items-cli rotatingShop -n accelbyte -b http://localhost:8081 -i clientId -s clientSecret -u username123 -p password123 -a /customitemtestexample -g localhost:6565 -m backfill
 ```
 - Show usage help
 ```bash
- $ rotating-shop-items-cli rotatingShop -h
+rotating-shop-items-cli rotatingShop -h
 ```
