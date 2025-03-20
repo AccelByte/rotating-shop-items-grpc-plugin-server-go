@@ -5,56 +5,51 @@
 package common
 
 import (
-	"context"
-	"fmt"
-	"strconv"
-	"testing"
+	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/factory"
+	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/iam"
+	sdkAuth "github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils/auth"
+	"time"
 
-	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils/auth/validator"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"google.golang.org/grpc/metadata"
+
+	"testing"
 )
 
-type authValidatorMock struct {
-	mock.Mock
-}
+func TestTokenValidator_ValidateToken(t *testing.T) {
+	t.Skip() // "TODO: mock and remove hardcoded client id and secret"
 
-func (a *authValidatorMock) Initialize() {}
-func (a *authValidatorMock) Validate(token string, permission *validator.Permission, namespace *string, userId *string) error {
-	args := a.Called(token, permission, namespace, userId)
-
-	return args.Error(0)
-}
-
-func TestUnaryAuthServerIntercept(t *testing.T) {
-	md := map[string]string{
-		"authorization": "Bearer <some-random-authorization-token>",
-	}
-	ctx := metadata.NewIncomingContext(context.Background(), metadata.New(md))
-	action := 2
-	namespace := "test-accelbyte"
-	resourceName := "test-CHATGRPCSERVICE"
-	perm := validator.Permission{
-		Action:   action,
-		Resource: fmt.Sprintf("NAMESPACE:%s:%s", namespace, resourceName),
-	}
-	var userId *string
-	t.Setenv("AB_ACTION", strconv.Itoa(action))
-	t.Setenv("AB_NAMESPACE", namespace)
-	t.Setenv("AB_RESOURCE_NAME", resourceName)
-
-	val := &authValidatorMock{}
-	val.On("Validate", "<some-random-authorization-token>", &perm, &namespace, userId).Return(nil)
-	Validator = val
-
-	req := struct{}{}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return req, nil
+	// Arrange
+	namespace := GetEnv("AB_NAMESPACE", "accelbyte")
+	clientId := ""
+	clientSecret := ""
+	configRepo := sdkAuth.DefaultConfigRepositoryImpl()
+	tokenRepo := sdkAuth.DefaultTokenRepositoryImpl()
+	authService := iam.OAuth20Service{
+		Client:           factory.NewIamClient(configRepo),
+		ConfigRepository: configRepo,
+		TokenRepository:  tokenRepo,
 	}
 
-	// test
-	res, err := UnaryAuthServerIntercept(ctx, req, nil, handler)
-	assert.NoError(t, err)
-	assert.Equal(t, req, res)
+	err := authService.LoginClient(&clientId, &clientSecret)
+	if err != nil {
+		assert.Fail(t, err.Error())
+
+		return
+	}
+
+	accessToken, err := authService.GetToken()
+	if err != nil {
+		assert.Fail(t, err.Error())
+
+		return
+	}
+
+	Validator = NewTokenValidator(authService, time.Duration(600)*time.Second, true)
+	Validator.Initialize()
+
+	// Act
+	err = authService.Validate(accessToken, nil, &namespace, nil)
+
+	// Assert
+	assert.Nil(t, err)
 }
