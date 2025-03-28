@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "257a99e7-be50-4a9e-b764-144c81e61d7c",
+		"_postman_id": "ff4a8e0d-18b6-4a64-b1c5-b53bcd3f0a11",
 		"name": "Rotating Shop Items Demo",
 		"description": "This `collection` requires an `environment` with the following variables.\n\n- `AB_BASE_URL`\n- `AB_NAMESPACE`\n- `AB_CLIENT_ID`\n- `AB_CLIENT_SECRET`\n- `EXTEND_APP_NAME` if you deployed your Extend App to AccelByte Gaming Services;\n    - or `GRPC_SERVER_URL` if you're using Ngrok to expose a locally hosted Extend App (ex: `9.tcp.ap.ngrok.io:99999`)\n\nYou will need following permissions for the IAM Client.  \nFor AGS Private Cloud customers:\n\n- `ADMIN:NAMESPACE:{namespace}:CONFIG:SERVICEPLUGIN [READ,UPDATE,DELETE]`\n    \n- `ADMIN:NAMESPACE:{namespace}:STORE [CREATE,READ,UPDATE,DELETE]`\n    \n- `ADMIN:NAMESPACE:{namespace}:CATEGORY [CREATE]`\n    \n- `ADMIN:NAMESPACE:{namespace}:CURRENCY [CREATE,READ,DELETE]`\n    \n- `ADMIN:NAMESPACE:{namespace}:ITEM [CREATE,READ,DELETE]`\n    \n- `NAMESPACE:{namespace}:USER:{userId}:STORE [READ]`\n    \n\nFor AGS Shared Cloud customers:\n\n- Platform Store -> Service Plugin Config (Read, Update, Delete)\n- Platform Store -> Store (Create, Read, Update, Delete)\n- Platform Store -> Category (Create)\n- Platform Store -> Currency (Create, Read, Delete)\n- Platform Store -> Item (Create, Read, Delete)\n    \n\nMake sure you have deployed Extend Service Extension app. Get `EXTEND_APP_NAME` from extend app page in admin portal. For local deployment, use local url instead.\n\nPlease read [getting started with rotating shop items customization](https://docs.accelbyte.io/gaming-services/services/extend/override/getting-started-with-rotating-shop-items-customization/) for more information.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "17100405"
+		"_exporter_id": "19336018"
 	},
 	"item": [
 		{
@@ -396,21 +396,140 @@
 			"response": []
 		},
 		{
-			"name": "41-create-store",
+			"name": "41-list-stores",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"List store and get draft store id if exists\", function () {\r",
+							"    if (pm.response.code == 200) {\r",
+							"        var responseJson = pm.response.json();    \r",
+							"        responseJson.forEach((item) => {\r",
+							"            if (!item.published) {\r",
+							"                pm.collectionVariables.set('TEST_STORE_ID', item.storeId)\r",
+							"            }\r",
+							"        })\r",
+							"    }\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{CLIENT_ACCESS_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{AB_BASE_URL}}/platform/admin/namespaces/{{AB_NAMESPACE}}/stores",
+					"host": [
+						"{{AB_BASE_URL}}"
+					],
+					"path": [
+						"platform",
+						"admin",
+						"namespaces",
+						"{{AB_NAMESPACE}}",
+						"stores"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "42-delete-store",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Delete draft store if exists.\r",
+							"\r",
+							"let storeId = pm.collectionVariables.get('TEST_STORE_ID');\r",
+							"if (storeId === undefined || storeId === null || storeId === \"\")\r",
+							"    pm.execution.skipRequest();"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{CLIENT_ACCESS_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{AB_BASE_URL}}/platform/admin/namespaces/{{AB_NAMESPACE}}/stores/{{TEST_STORE_ID}}",
+					"host": [
+						"{{AB_BASE_URL}}"
+					],
+					"path": [
+						"platform",
+						"admin",
+						"namespaces",
+						"{{AB_NAMESPACE}}",
+						"stores",
+						"{{TEST_STORE_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "43-create-store",
 			"event": [
 				{
 					"listen": "prerequest",
 					"script": {
 						"exec": [
 							"var uuid = require(\"uuid\");",
-							"",
-							"let storeUuid = uuid.v4();",
+							"let storeUuid = uuid.v4().replaceAll(\"-\",\"\");",
 							"",
 							"let requestBody = {",
-							"    title: \"Section Plugin Demo Store\",",
+							"    title: `Section Plugin Demo Store ${storeUuid}`,",
 							"    defaultLanguage: \"en\",",
 							"    defaultRegion: \"US\",",
-							"    description: `A store created for the Section Plugin Demo. (${storeUuid})`,",
+							"    description: \"A store created for the Section Plugin Demo.\",",
 							"    supportedLanguages: [\"en\"],",
 							"    supportedRegions: [\"US\"]",
 							"};",
@@ -481,7 +600,7 @@
 			"response": []
 		},
 		{
-			"name": "42-create-category",
+			"name": "45-create-category",
 			"event": [
 				{
 					"listen": "test",
@@ -541,7 +660,7 @@
 			"response": []
 		},
 		{
-			"name": "43-create-store-view",
+			"name": "46-create-store-view",
 			"event": [
 				{
 					"listen": "test",
@@ -609,7 +728,7 @@
 			"response": []
 		},
 		{
-			"name": "441-create-item-1",
+			"name": "51-create-item-1",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -725,7 +844,7 @@
 			"response": []
 		},
 		{
-			"name": "442-create-item-2",
+			"name": "52-create-item-2",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -841,7 +960,7 @@
 			"response": []
 		},
 		{
-			"name": "443-create-item-3",
+			"name": "53-create-item-3",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -957,7 +1076,7 @@
 			"response": []
 		},
 		{
-			"name": "45-create-store-section",
+			"name": "61-create-store-section",
 			"event": [
 				{
 					"listen": "test",
@@ -1041,7 +1160,7 @@
 			"response": []
 		},
 		{
-			"name": "46a-enable-fixed-rotation-for-section",
+			"name": "65-enable-fixed-rotation-for-section",
 			"event": [
 				{
 					"listen": "test",
@@ -1150,7 +1269,7 @@
 			"response": []
 		},
 		{
-			"name": "46b-enable-custom-rotation-for-section",
+			"name": "66-enable-custom-rotation-for-section",
 			"event": [
 				{
 					"listen": "test",
@@ -1259,7 +1378,7 @@
 			"response": []
 		},
 		{
-			"name": "47-publish-store",
+			"name": "72-publish-store",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -1317,7 +1436,7 @@
 			"response": []
 		},
 		{
-			"name": "48-list-active-store-sections",
+			"name": "75-list-active-store-sections",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -1380,56 +1499,13 @@
 			"response": []
 		},
 		{
-			"name": "80-delete-currency",
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{CLIENT_ACCESS_TOKEN}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "{{AB_BASE_URL}}/platform/admin/namespaces/{{AB_NAMESPACE}}/currencies/{{TEST_CURRENCY_CODE}}",
-					"host": [
-						"{{AB_BASE_URL}}"
-					],
-					"path": [
-						"platform",
-						"admin",
-						"namespaces",
-						"{{AB_NAMESPACE}}",
-						"currencies",
-						"{{TEST_CURRENCY_CODE}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "81-delete-store",
+			"name": "80-delete-store",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.collectionVariables.set('TEST_STORE_ID', \"\");",
-							"pm.collectionVariables.set('TEST_STORE_VIEW_ID', \"\");",
-							"pm.collectionVariables.set('TEST_STORE_SECTION_ID', \"\");",
-							"",
-							"pm.collectionVariables.set('TEST_ITEM_ID_1', \"\");",
-							"pm.collectionVariables.set('TEST_ITEM_SKU_1', \"\");",
-							"pm.collectionVariables.set('TEST_ITEM_ID_2', \"\");",
-							"pm.collectionVariables.set('TEST_ITEM_SKU_2', \"\");",
-							"pm.collectionVariables.set('TEST_ITEM_ID_3', \"\");",
-							"pm.collectionVariables.set('TEST_ITEM_SKU_3', \"\");",
-							"",
-							"pm.collectionVariables.set('TEST_ENTITLEMENT_ID', \"\");"
+							""
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -1461,6 +1537,38 @@
 						"{{AB_NAMESPACE}}",
 						"stores",
 						"{{TEST_STORE_ID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "81-delete-currency",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{CLIENT_ACCESS_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{AB_BASE_URL}}/platform/admin/namespaces/{{AB_NAMESPACE}}/currencies/{{TEST_CURRENCY_CODE}}",
+					"host": [
+						"{{AB_BASE_URL}}"
+					],
+					"path": [
+						"platform",
+						"admin",
+						"namespaces",
+						"{{AB_NAMESPACE}}",
+						"currencies",
+						"{{TEST_CURRENCY_CODE}}"
 					]
 				}
 			},
@@ -1606,7 +1714,7 @@
 		},
 		{
 			"key": "TEST_MODE",
-			"value": "",
+			"value": "rotation",
 			"type": "string"
 		},
 		{
