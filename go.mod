@@ -1,6 +1,6 @@
 module rotating-shop-items-grpc-plugin-server-go
 
-go 1.18
+go 1.24
 
 require (
 	github.com/AccelByte/accelbyte-go-sdk v0.80.0
