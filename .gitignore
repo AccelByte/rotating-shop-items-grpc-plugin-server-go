@@ -237,3 +237,6 @@ rotating-shop-items-grpc-plugin-server-go
 
 .env*
 !.env.template
+
+.cache/
+.idea/
