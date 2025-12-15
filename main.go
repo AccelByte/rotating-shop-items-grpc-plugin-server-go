@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -26,7 +27,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/propagators/b3"
@@ -57,8 +57,23 @@ const (
 
 var (
 	serviceName = common.GetEnv("OTEL_SERVICE_NAME", "CustomRotatingShopItemsServiceGoServerDocker")
-	logLevelStr = common.GetEnv("LOG_LEVEL", logrus.InfoLevel.String())
+	logLevelStr = common.GetEnv("LOG_LEVEL", "info")
 )
+
+func parseSlogLevel(levelStr string) slog.Level {
+	switch strings.ToLower(levelStr) {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn", "warning":
+		return slog.LevelWarn
+	case "error", "fatal", "panic":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
 
 func main() {
 	go func() {
@@ -66,20 +81,24 @@ func main() {
 		runtime.SetMutexProfileFraction(10)
 	}()
 
-	logrus.Infof("starting app server..")
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	logrusLevel, err := logrus.ParseLevel(logLevelStr)
-	if err != nil {
-		logrusLevel = logrus.InfoLevel
+	// Parse log level from environment variable
+	slogLevel := parseSlogLevel(logLevelStr)
+
+	// Create JSON handler for structured logging
+	opts := &slog.HandlerOptions{
+		Level: slogLevel,
 	}
-	logrusLogger := logrus.New()
-	logrusLogger.SetLevel(logrusLevel)
+	handler := slog.NewJSONHandler(os.Stdout, opts)
+	logger := slog.New(handler)
+	slog.SetDefault(logger) // Set as default logger for the application
+
+	logger.Info("starting app server..")
 
 	loggingOptions := []logging.Option{
-		logging.WithLogOnEvents(logging.PayloadSent),
+		logging.WithLogOnEvents(logging.StartCall, logging.FinishCall, logging.PayloadReceived, logging.PayloadSent),
 		logging.WithFieldsFromContext(func(ctx context.Context) logging.Fields {
 			if span := trace.SpanContextFromContext(ctx); span.IsSampled() {
 				return logging.Fields{"traceID", span.TraceID().String()}
@@ -94,11 +113,11 @@ func main() {
 	srvMetrics := promgrpc.NewServerMetrics()
 	unaryServerInterceptors := []grpc.UnaryServerInterceptor{
 		srvMetrics.UnaryServerInterceptor(),
-		logging.UnaryServerInterceptor(common.InterceptorLogger(logrusLogger), loggingOptions...),
+		logging.UnaryServerInterceptor(common.InterceptorLogger(logger), loggingOptions...),
 	}
 	streamServerInterceptors := []grpc.StreamServerInterceptor{
 		srvMetrics.StreamServerInterceptor(),
-		logging.StreamServerInterceptor(common.InterceptorLogger(logrusLogger), loggingOptions...),
+		logging.StreamServerInterceptor(common.InterceptorLogger(logger), loggingOptions...),
 	}
 
 	// Preparing the IAM authorization
@@ -118,12 +137,12 @@ func main() {
 		common.Validator = common.NewTokenValidator(oauthService, time.Duration(refreshInterval)*time.Second, true)
 		err := common.Validator.Initialize(ctx)
 		if err != nil {
-			logrus.Infof(err.Error())
+			logger.Info(err.Error())
 		}
 
 		unaryServerInterceptors = append(unaryServerInterceptors, common.UnaryAuthServerIntercept)
 		streamServerInterceptors = append(streamServerInterceptors, common.StreamAuthServerIntercept)
-		logrus.Infof("added auth interceptors")
+		logger.Info("added auth interceptors")
 	}
 
 	// Create gRPC Server
@@ -136,15 +155,14 @@ func main() {
 	// Register Section Service
 	sectionServiceServer, err := service.NewSectionServiceServer()
 	if err != nil {
-		logrus.Fatalf("unable to rotating shop service server: %v", err)
-
-		return
+		logger.Error("unable to rotating shop service server", "error", err)
+		os.Exit(1)
 	}
 	pb.RegisterSectionServer(grpcServer, sectionServiceServer)
 
 	// Enable gRPC Reflection
 	reflection.Register(grpcServer)
-	logrus.Infof("gRPC reflection enabled")
+	logger.Info("gRPC reflection enabled")
 
 	// Enable gRPC Health Check
 	grpc_health_v1.RegisterHealthServer(grpcServer, health.NewServer())
@@ -162,22 +180,22 @@ func main() {
 		http.Handle(metricsEndpoint, promhttp.HandlerFor(prometheusRegistry, promhttp.HandlerOpts{}))
 		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", metricsPort), nil))
 	}()
-	logrus.Infof("serving prometheus metrics at: (:%d%s)", metricsPort, metricsEndpoint)
+	logger.Info("serving prometheus metrics", "port", metricsPort, "endpoint", metricsEndpoint)
 
 	// Set Tracer Provider
 	tracerProvider, err := common.NewTracerProvider(serviceName, environment, id)
 	if err != nil {
-		logrus.Fatalf("failed to create tracer provider: %v", err)
-
-		return
+		logger.Error("failed to create tracer provider", "error", err)
+		os.Exit(1)
 	}
 	otel.SetTracerProvider(tracerProvider)
 	defer func(ctx context.Context) {
 		if err := tracerProvider.Shutdown(ctx); err != nil {
-			logrus.Fatal(err)
+			logger.Error("failed to shutdown tracer provider", "error", err)
+			os.Exit(1)
 		}
 	}(ctx)
-	logrus.Infof("set tracer provider: (name: %s environment: %s id: %d)", serviceName, environment, id)
+	logger.Info("set tracer provider", "name", serviceName, "environment", environment, "id", id)
 
 	// Set Text Map Propagator
 	b := b3.New(b3.WithInjectEncoding(b3.B3MultipleHeader))
@@ -188,28 +206,26 @@ func main() {
 			propagation.Baggage{},
 		),
 	)
-	logrus.Infof("set text map propagator")
+	logger.Info("set text map propagator")
 
 	// Start gRPC Server
-	logrus.Infof("starting gRPC server..")
+	logger.Info("starting gRPC server..")
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
-		logrus.Fatalf("failed to listen to tcp:%d: %v", grpcPort, err)
-
-		return
+		logger.Error("failed to listen to tcp", "port", grpcPort, "error", err)
+		os.Exit(1)
 	}
 	go func() {
 		if err = grpcServer.Serve(lis); err != nil {
-			logrus.Fatalf("failed to run gRPC server: %v", err)
-
-			return
+			logger.Error("failed to run gRPC server", "error", err)
+			os.Exit(1)
 		}
 	}()
-	logrus.Infof("gRPC server started")
-	logrus.Infof("app server started")
+	logger.Info("gRPC server started")
+	logger.Info("app server started")
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
-	logrus.Infof("signal received")
+	logger.Info("signal received")
 }
