@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.10
 
 require (
-	github.com/AccelByte/accelbyte-go-sdk v0.80.0
+	github.com/AccelByte/accelbyte-go-sdk v0.85.0
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
