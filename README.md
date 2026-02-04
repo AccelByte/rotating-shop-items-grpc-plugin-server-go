@@ -134,9 +134,9 @@ your own logic for the custom functions.
       - Sample URL for AGS Shared Cloud customers: `https://spaceshooter.prod.gamingservices.accelbyte.io`
       - Sample URL for AGS Private Cloud customers:  `https://dev.accelbyte.io`
       
-   b. [Create a Game Namespace](https://docs.accelbyte.io/gaming-services/services/access/reference/namespaces/manage-your-namespaces/) if you don't have one yet. Keep the `Namespace ID`.
+   b. [Create a Game Namespace](https://docs.accelbyte.io/gaming-services/modules/foundations/identity-access/namespaces/manage-your-namespaces/) if you don't have one yet. Keep the `Namespace ID`.
 
-   c. [Create an OAuth Client](https://docs.accelbyte.io/gaming-services/services/access/authorization/manage-access-control-for-applications/#create-an-iam-client) with confidential client type. Keep the `Client ID` and `Client Secret`.
+   c. [Create an OAuth Client](https://docs.accelbyte.io/gaming-services/modules/foundations/identity-access/authorization/manage-access-control-for-applications/#create-an-iam-client) with confidential client type. Keep the `Client ID` and `Client Secret`.
 
 ## Setup
 
@@ -335,7 +335,7 @@ To test the app, which runs locally with AGS, the `gRPC server` needs to be conn
    command in `grpc-plugin-dependencies` directory instead of this app directory and change tunnel local port from 6565 to 10000.
    This way, the `gRPC server` will be called via `Envoy` service within `grpc-plugin-dependencies` stack instead of directly.
 
-3. [Create an OAuth Client](https://docs.accelbyte.io/gaming-services/services/access/authorization/manage-access-control-for-applications/#create-an-iam-client) with `confidential` client type with the following permissions. Keep the `Client ID` and `Client Secret`.
+3. [Create an OAuth Client](https://docs.accelbyte.io/gaming-services/modules/foundations/identity-access/authorization/manage-access-control-for-applications/#create-an-iam-client) with `confidential` client type with the following permissions. Keep the `Client ID` and `Client Secret`.
    
    - For AGS Private Cloud customers:
       - `ADMIN:NAMESPACE:{namespace}:CONFIG:SERVICEPLUGIN [READ,UPDATE,DELETE]`
@@ -395,7 +395,7 @@ After completing testing, the next step is to deploy your app to `AccelByte Gami
 
 1. **Create an Extend Override app**
 
-   If you do not already have one, create a new [Extend Override App](https://docs.accelbyte.io/gaming-services/services/extend/override/rotating-shop-items/get-started-rotating-shop-items/#upload-the-extend-app).
+   If you do not already have one, create a new [Extend Override App](https://docs.accelbyte.io/gaming-services/modules/foundations/extend/override/rotating-shop-items/get-started-rotating-shop-items/#upload-the-extend-app).
 
    On the **App Detail** page, take note of the following values.
    - `Namespace`
@@ -425,5 +425,5 @@ After completing testing, the next step is to deploy your app to `AccelByte Gami
 
 ## Next Step
 
-Proceed by modifying this `Extend Override` app template to implement your own custom logic. For more details, see [here](https://docs.accelbyte.io/gaming-services/services/extend/override/rotating-shop-items/customize-rotating-shop-items/).
+Proceed by modifying this `Extend Override` app template to implement your own custom logic. For more details, see [here](https://docs.accelbyte.io/gaming-services/modules/foundations/extend/override/rotating-shop-items/customize-rotating-shop-items/).
 
